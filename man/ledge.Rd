@@ -1,0 +1,27 @@
+\name{ledge}
+\alias{ledge}
+\title{Leading-edge analysis}
+\usage{
+  ledge(mobj)
+}
+\arguments{
+  \item{mobj}{msviper class object}
+}
+\value{
+  msviper object updated with a ledge slot
+}
+\description{
+  This function performs a Leading-Edge analysis on an
+  object of class msviper
+}
+\examples{
+data(bcellViper, package="bcellViper")
+sig <- rowTtest(dset, "description", "CB", "N")$statistic
+mra <- msviper(sig, regulon)
+mra <- ledge(mra)
+summary(mra)
+}
+\seealso{
+  \code{\link{msviper}}
+}
+

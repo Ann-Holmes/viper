@@ -1,0 +1,4 @@
+new for version 0.99.1
+======================
+Bug fixed in shadow() function that was crashing when one regulon was completely contained into another regulon.
+
