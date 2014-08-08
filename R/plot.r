@@ -32,13 +32,6 @@ plot.msviper <- function(x, mrs=10, color=c("cornflowerblue","salmon"), pval=NUL
     marg <- par("mai")
     rlist <- maobject$signature
     if (ncol(rlist)>0) rlist <- rowMeans(rlist)
-    if (maobject$param$iterative) {
-        tmp1 <- cbind(rep(names(maobject$regulon), sapply(maobject$regulon, function(x) length(x$tfmode))), unlist(lapply(maobject$regulon, function(x) names(x$tfmode)), use.names=FALSE))
-        tmp1 <- cbind(tmp1, abs(maobject$es$nes)[match(tmp1[, 1], names(maobject$es$nes))])
-        tw <- tapply(tmp1[, 3], tmp1[, 2], function(x) sum(as.numeric(x)))
-    }
-    else tw <- 1/table(unlist(lapply(maobject$regulon, function(x) names(x$tfmode)), use.names = FALSE))^.5
-    tw <- 1-tw/max(tw)
     if (length(mrs)==1 & is.numeric(mrs[1])) {
         mrs <- names(maobject$es$nes)[order(maobject$es$p.value)[1:round(mrs)]]
         mrs <- mrs[order(maobject$es$nes[match(mrs, names(maobject$es$nes))], decreasing=TRUE)]
@@ -94,8 +87,9 @@ plot.msviper <- function(x, mrs=10, color=c("cornflowerblue","salmon"), pval=NUL
                 if (density>0) {
                     denStep <- round(length(densi)/density)
                     xpos <- seq(denStep, length(rlist)-denStep, length=density)
-                    densiRes <- sapply(xpos, function(i, densi, denStep)
-                    sum(densi[(i-denStep):(i+denStep)]), densi=densi, denStep=denStep)
+                    densiRes <- sapply(xpos, function(i, densi, denStep) {
+                        sum(densi[(i-denStep):(i+denStep)])
+                    }, densi=densi, denStep=denStep)
                     densiRes <- densiRes/max(densiRes)
                     if (smooth>0) densiRes <- smooth.spline(xpos, densiRes, spar=smooth)$y
                     lines(xpos, i+densiRes-1)
@@ -127,26 +121,33 @@ plot.msviper <- function(x, mrs=10, color=c("cornflowerblue","salmon"), pval=NUL
                 if (length(tset)>1) {
                     densi <- rep(0, length(rlist))
                     x <- match(names(tset), names(rlist))
-                    tw1 <- rep(1, length(x))
+					tw1 <- rep(1, length(x))
                     if (hybrid) {
                         x <- match(tset1, names(rlist))
-                        if (ii==1) x <- c(x, match(tset2, names(sort(-abs(rlist)*sign(maobject$es$nes[names(maobject$es$nes) == names(groups)[i]])))))
-                        else x <- c(x, match(tset2, names(sort(abs(rlist)*sign(maobject$es$nes[names(maobject$es$nes) == names(groups)[i]])))))
-                        tw1 <- groups[[i]]$likelihood[match(c(tset1, tset2), names(groups[[i]]$tfmode))]
-                        tw1 <- tw1*tw[match(c(tset1, tset2), names(tw))]
-                        tw1 <- tw1/max(tw1)
+                        if (ii==1) {
+                            x <- c(x, match(tset2, names(sort(-abs(rlist)*sign(maobject$es$nes[names(maobject$es$nes) == names(groups)[i]])))))
+                        }
+                        else {
+                            x <- c(x, match(tset2, names(sort(abs(rlist)*sign(maobject$es$nes[names(maobject$es$nes) == names(groups)[i]])))))
+                        }
+						tw1 <- groups[[i]]$likelihood[match(c(tset1, tset2), names(groups[[i]]$tfmode))]
+						tw1 <- tw1/max(tw1)
                     }
                     densi[x] <- 1
                     denStep <- round(length(densi)/bins)
                     x1 <- x[x<denStep]
                     x2 <- x[x>=denStep & x <= (length(rlist)-denStep)]
                     x3 <- x[x>(length(rlist)-denStep)]
-                    densiRes <- sapply(x2, function(i, densi, denStep) sum(densi[(i-denStep):(i+denStep)]), densi=densi, denStep=denStep)
-                    densiRes <- densiRes*(tw1[x>=denStep & x <= (length(rlist)-denStep)])
+                    densiRes <- sapply(x2, function(i, densi, denStep) {
+                        sum(densi[(i-denStep):(i+denStep)])
+                    }, densi=densi, denStep=denStep)
+					densiRes <- densiRes*(tw1[x>=denStep & x <= (length(rlist)-denStep)])
                     densiRes <- densiRes/max(densiRes)
                     temp <- rlist[x]
                     temp <- hsv(color[ii], densiRes, satval)
-                    for (iii in order(densiRes)) lines(c(x[iii], x[iii]),c(i-1+(ii-1)/2, i-1+ii/2), col=temp[iii])
+                    for (iii in order(densiRes)) {
+                        lines(c(x[iii], x[iii]),c(i-1+(ii-1)/2, i-1+ii/2), col=temp[iii])
+                    }
                     if (density>0) {
                         denStep <- round(length(densi)/density)
                         xpos <- seq(denStep, length(rlist)-denStep, length=density)

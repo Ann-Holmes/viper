@@ -2,8 +2,7 @@
 \alias{msviperSynergy}
 \title{msviper synergy analysis}
 \usage{
-  msviperSynergy(mobj, per = 1000, seed = 1,
-    verbose = TRUE)
+msviperSynergy(mobj, per = 1000, seed = 1, verbose = TRUE)
 }
 \arguments{
   \item{mobj}{msviper object containing combinatorial
@@ -19,11 +18,11 @@
   should be printed in the terminal}
 }
 \value{
-  Updated msviper object containing the sygergy p-value
+Updated msviper object containing the sygergy p-value
 }
 \description{
-  This function performs a synergy analysis for
-  combinatorial regulation
+This function performs a synergy analysis for combinatorial
+regulation
 }
 \examples{
 data(bcellViper, package="bcellViper")
@@ -35,6 +34,6 @@ mra <- msviperSynergy(mra)
 summary(mra)
 }
 \seealso{
-  \code{\link{msviper}}
+\code{\link{msviper}}
 }
 

@@ -3,8 +3,8 @@
 \alias{viperSignature-class}
 \title{viperSignature}
 \description{
-  This class contains the results produced by the
-  \code{viperSignature} function
+This class contains the results produced by the
+\code{viperSignature} function
 }
 \section{Slots}{
   \describe{ \item{\code{signature}:}{Matrix of class

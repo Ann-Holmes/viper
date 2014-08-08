@@ -2,8 +2,7 @@
 \alias{scale.signatureDistance}
 \title{Scaling of signatureDistance objects}
 \usage{
-  \method{scale}{signatureDistance} (x, center = TRUE,
-    scale = TRUE)
+\method{scale}{signatureDistance}(x, center = TRUE, scale = TRUE)
 }
 \arguments{
   \item{x}{signatureDistance object}
@@ -15,10 +14,10 @@
   generic function scale}
 }
 \value{
-  Scaled signatureDistance object
+Scaled signatureDistance object
 }
 \description{
-  This function scales the signatureDistance so its range
-  is (-1, 1)
+This function scales the signatureDistance so its range is
+(-1, 1)
 }
 

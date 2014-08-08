@@ -2,7 +2,7 @@
 \alias{pruneRegulon}
 \title{Prune Regulons}
 \usage{
-  pruneRegulon(regulon, cutoff = 50, eliminate = FALSE)
+pruneRegulon(regulon, cutoff = 50, eliminate = FALSE)
 }
 \arguments{
   \item{regulon}{Object of class regulon}
@@ -14,10 +14,10 @@
   \code{cutoff} should be eliminated}
 }
 \value{
-  Prunned regulon
+Prunned regulon
 }
 \description{
-  This function limits the maximum size of the regulons
+This function limits the maximum size of the regulons
 }
 \examples{
 data(bcellViper, package="bcellViper")
@@ -26,6 +26,6 @@ preg <- pruneRegulon(regulon, 400)
 hist(sapply(preg, function(x) sum(x$likelihood)/max(x$likelihood)), nclass=20)
 }
 \seealso{
-  \code{\link{viper}}, \code{\link{msviper}}
+\code{\link{viper}}, \code{\link{msviper}}
 }
 

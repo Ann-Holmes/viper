@@ -43,7 +43,7 @@ aracne2regulon <- function(afile, eset, gene = FALSE, format=c("adj", "3col"), v
     })
     if (gene) {
         if (verbose) message("Collapsing the interactomes to the gene level...")
-        tmp <- tmp[order(tmp$mi, decreasing=TRUE), ]
+        tmp <- aracne[order(aracne$mi, decreasing=TRUE), ]
         tmp$tf <- annot[match(tmp$tf, annot[, 1]), 2]
         tmp$target <- annot[match(tmp$target, annot[, 1]), 2]
         aracne <- tmp[!duplicated(paste(tmp$tf, tmp$target, sep="_")), ]

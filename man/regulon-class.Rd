@@ -2,7 +2,7 @@
 \alias{regulon-class}
 \title{The regulon class}
 \description{
-  This class contains interactome data
+This class contains interactome data
 }
 \section{Slots}{
   List of regulators with the following slots: \describe{

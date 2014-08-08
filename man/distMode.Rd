@@ -2,7 +2,7 @@
 \alias{distMode}
 \title{Mode of continuous distributions}
 \usage{
-  distMode(x, adj = 1)
+distMode(x, adj = 1)
 }
 \arguments{
   \item{x}{Numeric data vector}
@@ -11,11 +11,11 @@
   kernel bandwidth}
 }
 \value{
-  Number
+Number
 }
 \description{
-  This function computes the mode for continuous
-  distributions
+This function computes the mode for continuous
+distributions
 }
 \examples{
 data(bcellViper, package="bcellViper")

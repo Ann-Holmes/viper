@@ -2,10 +2,8 @@
 \alias{groupPwea3}
 \title{Proportionally Weighted Enrichment Analysis for gene-set groups}
 \usage{
-  groupPwea3(rlist, groups, nullpw = NULL,
-    alternative = c("two.sided", "less", "greater"),
-    per = 0, tnorm = TRUE, minsize = 5, tw = 1, lw = 1,
-    simsig = TRUE, verbose = TRUE)
+groupPwea3(rlist, groups, nullpw = NULL, alternative = c("two.sided",
+  "less", "greater"), per = 0, minsize = 5, verbose = TRUE)
 }
 \arguments{
   \item{rlist}{Named vector containing the scores to rank
@@ -28,32 +26,20 @@
   \item{per}{Integer indicating the number of permutations
   for the genes in case "nullpw" is ommited}
 
-  \item{tnorm}{Logical, whether the ranking vector should
-  be normally transformed after the copula transformation}
-
   \item{minsize}{Integer indicating the minimum size for
   the regulons}
-
-  \item{tw}{Number indicating the exponent for the target
-  pleotropy weight}
-
-  \item{lw}{Number indicating the exponent for the edge
-  likelihood weight}
-
-  \item{simsig}{Logical, whether a symetrical distribution
-  of the signature is used}
 
   \item{verbose}{Logical, whether progression messages
   should be printed in the terminal}
 }
 \value{
-  A list containing four matrices: \describe{
-  \item{es}{Enrichment score} \item{nes}{Normalized
-  Enrichment Score} \item{size}{Regulon size}
-  \item{p.value}{Enrichment p.value} }
+A list containing four matrices: \describe{
+\item{es}{Enrichment score} \item{nes}{Normalized
+Enrichment Score} \item{size}{Regulon size}
+\item{p.value}{Enrichment p.value} }
 }
 \description{
-  This function performs a Proportionally Weighted
-  Enrichment Analysis on groups of gene-sets
+This function performs a Proportionally Weighted Enrichment
+Analysis on groups of gene-sets
 }
 

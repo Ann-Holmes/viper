@@ -5,8 +5,13 @@
 \alias{rowTtest,matrix-method}
 \title{Student's t-test for rows}
 \usage{
-\S4method{rowTtest}{matrix}(x, y = NULL, mu = 0, alternative = "two.sided")
-\S4method{rowTtest}{ExpressionSet}(x, pheno, group1, group2 = NULL, mu = 0, alternative = "two.sided")
+rowTtest(x, ...)
+
+\S4method{rowTtest}{matrix}(x, y = NULL, mu = 0,
+  alternative = "two.sided")
+
+\S4method{rowTtest}{ExpressionSet}(x, pheno, group1, group2 = NULL, mu = 0,
+  alternative = "two.sided")
 }
 \arguments{
   \item{x}{ExpressionSet object or Numerical matrix
@@ -32,14 +37,16 @@
   \item{group2}{Vector of character strings indicating the
   category from phenotype \code{pheno} to use as control
   group}
+
+  \item{...}{Added in S4 method for compatibility}
 }
 \value{
-  List of Student-t-statistic (\code{statistic}) and
-  p-values (\code{p.value})
+List of Student-t-statistic (\code{statistic}) and p-values
+(\code{p.value})
 }
 \description{
-  This function performs a Student's t-test on each row of
-  a matrix
+This function performs a Student's t-test on each row of a
+matrix
 }
 \examples{
 data(bcellViper, package="bcellViper")

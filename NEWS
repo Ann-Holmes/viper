@@ -1,3 +1,15 @@
+new for version 1.1.0
+====================
+A bug in aracne2regulon function related to collapsing the regulons at the gene level was fixed
+
+A bug in the aecdf function was fixed
+
+Implemented a new pleiotropy algorithm
+
+aREA function was rewritten with improved performance
+
+Computation of empirical p-values was performed assuming a symmetric distribution of the ES around 0 for the NULL model, increasing in this way the power of the test by a factor of 2
+
 new for version 0.99.1
 ======================
 Bug fixed in shadow() function that was crashing when one regulon was completely contained into another regulon.

@@ -2,8 +2,8 @@
 \alias{signatureDistance}
 \title{Signature Distance}
 \usage{
-  signatureDistance(dset1, dset2 = NULL, nn = NULL,
-    groups = NULL, scale. = TRUE, two.tails = TRUE, ws = 2)
+signatureDistance(dset1, dset2 = NULL, nn = NULL, groups = NULL,
+  scale. = TRUE, two.tails = TRUE, ws = 2)
 }
 \arguments{
   \item{dset1}{Dataset of any type in matrix format, with
@@ -32,12 +32,12 @@
   weighting, 1 is weighting by SD}
 }
 \value{
-  Object of class \code{signatureDistance} as a matrix of
-  normalized enrichment scores
+Object of class \code{signatureDistance} as a matrix of
+normalized enrichment scores
 }
 \description{
-  This function computes the similarity between columns of
-  a data matrix
+This function computes the similarity between columns of a
+data matrix
 }
 \examples{
 data(bcellViper, package="bcellViper")

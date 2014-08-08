@@ -2,8 +2,8 @@
 \alias{aracne2regulon}
 \title{Regulon object generation from ARACNe results}
 \usage{
-  aracne2regulon(afile, eset, gene = FALSE,
-    format = c("adj", "3col"), verbose = TRUE)
+aracne2regulon(afile, eset, gene = FALSE, format = c("adj", "3col"),
+  verbose = TRUE)
 }
 \arguments{
   \item{afile}{Character string indicating the name of the
@@ -28,11 +28,11 @@
   should be printed in the terminal.}
 }
 \value{
-  Regulon object
+Regulon object
 }
 \description{
-  This function generates a regulon object from ARACNe
-  results and the corresponding expression dataset
+This function generates a regulon object from ARACNe
+results and the corresponding expression dataset
 }
 \examples{
 data(bcellViper, package="bcellViper")
@@ -41,6 +41,6 @@ regul <- aracne2regulon(adjfile, dset)
 print(regul)
 }
 \seealso{
-  \code{\link{msviper}}, \code{\link{viper}}
+\code{\link{msviper}}, \code{\link{viper}}
 }
 

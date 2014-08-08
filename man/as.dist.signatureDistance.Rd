@@ -2,8 +2,7 @@
 \alias{as.dist.signatureDistance}
 \title{Distance matrix from signatureDistance objects}
 \usage{
-  \method{as.dist}{signatureDistance} (m, diag = FALSE,
-    upper = FALSE)
+\method{as.dist}{signatureDistance}(m, diag = FALSE, upper = FALSE)
 }
 \arguments{
   \item{m}{signatureDistance object}
@@ -13,10 +12,10 @@
   \item{upper}{parameter included for compatibility}
 }
 \value{
-  Object of class dist
+Object of class dist
 }
 \description{
-  This function transforms a signatureDistance object into
-  a dist object
+This function transforms a signatureDistance object into a
+dist object
 }
 

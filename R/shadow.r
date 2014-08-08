@@ -70,7 +70,7 @@ shadow <- function(mobj, regulators=.01, targets=10, shadow=.01, per=1000, nullm
         }, ll=ll, samp=length(which(names(tfm) %in% names(regul1[[x[1]]]$tfmode))))
         dnull <- cbind(ll, dnull)
         dnull[names(tfm) %in% names(regul1[[x[1]]]$tfmode), 1] <- 0
-        dnull <- t(t(dnull)/colSums(dnull))        
+        dnull <- t(t(dnull)/colSums(dnull))
         sum1 <- t(ss2) %*% (dnull*tfm)
         es <- colMeans(abs(sum1)+(t(ss1) %*% (dnull * (1-abs(tfm)))))
         x1 <- es[1]
@@ -103,7 +103,7 @@ shadow <- function(mobj, regulators=.01, targets=10, shadow=.01, per=1000, nullm
         return(x)
     })
     regul1 <- regul1[sapply(regul1, function(x) length(x$tfmode))>0]
-    res <- msviper(ges=mobj$signature, regulon=regul1, nullmodel=nullmodel, minsize=minsize, adaptive.size=adaptive.size, iterative=iterative, ges.filter=FALSE, synergy=0, verbose=verbose)
+    res <- msviper(ges=mobj$signature, regulon=regul1, nullmodel=nullmodel, pleiotropy=FALSE, minsize=minsize, adaptive.size=adaptive.size, ges.filter=FALSE, synergy=0, verbose=verbose)
     mobj$regulon <- c(res$regulon, mobj$regulon[grep("--", names(mobj$regulon))])
     pos <- grep("--", names(mobj$es$nes))
     mobj$es$es <- c(res$es$es, mobj$es$es[pos])

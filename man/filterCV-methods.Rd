@@ -5,7 +5,10 @@
 \alias{filterCV,matrix-method}
 \title{Coefficient of variation filter}
 \usage{
+filterCV(expset, ...)
+
 \S4method{filterCV}{matrix}(expset)
+
 \S4method{filterCV}{ExpressionSet}(expset)
 }
 \arguments{
@@ -14,13 +17,15 @@
   in rows. The \code{colnames} attribute should contain the
   sample names and the \code{rownames} attribute should
   contain the unique geneIDs}
+
+  \item{...}{Added in S4 method for compatibility}
 }
 \value{
-  CV filtered dataset
+CV filtered dataset
 }
 \description{
-  This function filter redundant probes based on the
-  highest coefficient of variation
+This function filter redundant probes based on the highest
+coefficient of variation
 }
 \examples{
 data(bcellViper, package="bcellViper")

@@ -2,7 +2,7 @@
 \alias{summary.msviper}
 \title{List msviper results}
 \usage{
-  \method{summary}{msviper} (object, mrs = 10, ...)
+\method{summary}{msviper}(object, mrs = 10, ...)
 }
 \arguments{
   \item{object}{msviper object}
@@ -14,9 +14,9 @@
   generic function}
 }
 \value{
-  Data.frame with results
+Data.frame with results
 }
 \description{
-  This function generates a table of msviper results
+This function generates a table of msviper results
 }
 

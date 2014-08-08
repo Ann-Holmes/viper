@@ -41,7 +41,7 @@ signatureDistance <- function(dset1, dset2=NULL, nn=NULL, groups=NULL, scale.=TR
                 tmp <- d1[orden[1:(2*nn)], i]
                 return(abs(tmp)^ws)
             }, d1=d1, nn=nn, ws=ws)
-        }        
+        }
         names(reg) <- colnames(d1)
         if (ws==0) {
             d1 <- apply(d1, 2, rank)/(nrow(d1)+1)*2-1
@@ -108,7 +108,7 @@ signatureDistance <- function(dset1, dset2=NULL, nn=NULL, groups=NULL, scale.=TR
             tmp <- d1[orden[1:(2*nn)], i]
             return(abs(tmp)^ws)
         }, d1=d2, nn=nn, ws=ws)
-    }        
+    }
     names(reg1) <- colnames(d1)
     names(reg2) <- colnames(d2)
     if (ws==0) {
@@ -121,7 +121,7 @@ signatureDistance <- function(dset1, dset2=NULL, nn=NULL, groups=NULL, scale.=TR
             d2[d2==(-1)] <- 1-(1/nrow(d2))
         }
         d1 <- qnorm(d1/2+.5)
-        d2 <- qnorm(d2/2+.5)    
+        d2 <- qnorm(d2/2+.5)
     }
     genes <- unique(unlist(lapply(reg1, names), use.names=FALSE))
     d2 <- t(filterRowMatrix(d2, match(genes, rownames(d2))))

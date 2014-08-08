@@ -5,8 +5,14 @@
 \alias{viperSignature,matrix-method}
 \title{Generic S4 method for signature and sample-permutation null model for VIPER}
 \usage{
-\S4method{viperSignature}{matrix}(eset, ref, per = 1000, seed = 1, verbose = TRUE)
-\S4method{viperSignature}{ExpressionSet}(eset, pheno, refgroup, per = 1000, seed = 1, verbose = TRUE)
+viperSignature(eset, ...)
+
+\S4method{viperSignature}{ExpressionSet}(eset, pheno, refgroup,
+  method = c("ttest", "zscore", "mean"), per = 1000, seed = 1,
+  verbose = TRUE)
+
+\S4method{viperSignature}{matrix}(eset, ref, method = c("ttest", "zscore",
+  "mean"), per = 1000, seed = 1, verbose = TRUE)
 }
 \arguments{
   \item{eset}{ExpressionSet object or numeric matrix
@@ -18,6 +24,10 @@
 
   \item{refgroup}{Vector of character string indicatig the
   category of \code{pheno} to use as reference group}
+
+  \item{method}{Character string indicating how to compute
+  the signature and null model, either ttest, zscore or
+  mean}
 
   \item{per}{Integer indicating the number of sample
   permutations}
@@ -31,15 +41,16 @@
 
   \item{ref}{Numeric matrix containing the reference
   samples (columns) and genes in rows}
+
+  \item{...}{Added in S4 method for compatibility}
 }
 \value{
-  viperSignature S3 object containing the signature and
-  null model
+viperSignature S3 object containing the signature and null
+model
 }
 \description{
-  This function generates a viperSignature object from a
-  test dataset based on a set of samples to use as
-  reference
+This function generates a viperSignature object from a test
+dataset based on a set of samples to use as reference
 }
 \examples{
 data(bcellViper, package="bcellViper")

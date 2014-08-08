@@ -5,8 +5,13 @@
 \alias{bootstrapTtest,matrix-method}
 \title{Bootstrapped signature by t-test}
 \usage{
-\S4method{bootstrapTtest}{matrix}(x, y, per = 100, seed=1, verbose = TRUE)
-\S4method{bootstrapTtest}{ExpressionSet}(x, pheno, group1, group2, per = 100, seed = 1, verbose = TRUE)
+bootstrapTtest(x, ...)
+
+\S4method{bootstrapTtest}{matrix}(x, y, per = 100, seed = 1,
+  verbose = TRUE)
+
+\S4method{bootstrapTtest}{ExpressionSet}(x, pheno, group1, group2, per = 100,
+  seed = 1, verbose = TRUE)
 }
 \arguments{
   \item{x}{Matrix containing the test dataset}
@@ -31,14 +36,16 @@
   \item{group2}{Vector of character strings indicating the
   category from phenotype \code{pheno} to use as control
   group}
+  
+  \item{...}{Added in S4 method for compatibility}
 }
 \value{
-  Matrix of z-scores with genes in rows and permutations in
-  columns
+Matrix of z-scores with genes in rows and permutations in
+columns
 }
 \description{
-  This function generates a bootstrapped signature matrix
-  by t-test
+This function generates a bootstrapped signature matrix by
+t-test
 }
 \examples{
 data(bcellViper, package="bcellViper")
@@ -52,6 +59,6 @@ dim(sig)
 plot(density(sig[1907, ]))
 }
 \seealso{
-  \code{\link{msviper}}
+\code{\link{msviper}}
 }
 

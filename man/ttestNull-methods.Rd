@@ -5,8 +5,13 @@
 \alias{ttestNull,matrix-method}
 \title{Null model by sample permutation testing}
 \usage{
-\S4method{ttestNull}{matrix}(x, y, per = 1000, repos = TRUE, seed = 1, verbose = TRUE)
-\S4method{ttestNull}{ExpressionSet}(x, pheno, group1, group2, per = 1000, repos = TRUE, seed = 1, verbose = TRUE)
+ttestNull(x, ...)
+
+\S4method{ttestNull}{matrix}(x, y, per = 1000, repos = TRUE, seed = 1,
+  verbose = TRUE)
+
+\S4method{ttestNull}{ExpressionSet}(x, pheno, group1, group2, per = 1000,
+  repos = TRUE, seed = 1, verbose = TRUE)
 }
 \arguments{
   \item{x}{ExpressionSet object or Matrix containing the
@@ -35,14 +40,16 @@
   \item{group2}{Vector of character strings indicating the
   category from phenotype \code{pheno} to use as control
   group}
+
+  \item{...}{Added in S4 method for compatibility}
 }
 \value{
-  Matrix of z-scores with genes in rows and permutations in
-  columns
+Matrix of z-scores with genes in rows and permutations in
+columns
 }
 \description{
-  This function performs sample permutation and t-test to
-  generate a null model
+This function performs sample permutation and t-test to
+generate a null model
 }
 \examples{
 data(bcellViper, package="bcellViper")
@@ -56,6 +63,6 @@ dim(dnull)
 plot(density(dnull))
 }
 \seealso{
-  \code{\link{msviper}}, \code{\link{viper}}
+\code{\link{msviper}}, \code{\link{viper}}
 }
 

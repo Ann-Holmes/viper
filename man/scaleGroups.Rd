@@ -2,7 +2,7 @@
 \alias{scaleGroups}
 \title{Signatures with grouping variable}
 \usage{
-  scaleGroups(x, groups)
+scaleGroups(x, groups)
 }
 \arguments{
   \item{x}{Numerical matrix with genes in rows and samples
@@ -12,15 +12,15 @@
   dset containing the labels for grouping the samples}
 }
 \value{
-  Numeric matrix of signatures (z-scores) with genes in
-  rows and groups in columns
+Numeric matrix of signatures (z-scores) with genes in rows
+and groups in columns
 }
 \description{
-  \code{scaleGroups} compares each group vs. the remaining
-  groups using a Student's t-test
+\code{scaleGroups} compares each group vs. the remaining
+groups using a Student's t-test
 }
 \details{
-  This function compute signatures using groups information
+This function compute signatures using groups information
 }
 \examples{
 data(bcellViper, package="bcellViper")

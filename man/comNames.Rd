@@ -2,7 +2,7 @@
 \alias{comNames}
 \title{Combinatorial annotation}
 \usage{
-  comNames(x, annot)
+comNames(x, annot)
 }
 \arguments{
   \item{x}{Character vector of gene name combinations,
@@ -12,12 +12,12 @@
   \code{names} attribute}
 }
 \value{
-  Converted annotations
+Converted annotations
 }
 \description{
-  This function convers combinatorial annotations
+This function convers combinatorial annotations
 }
 \seealso{
-  \code{\link{msviper}}
+\code{\link{msviper}}
 }
 

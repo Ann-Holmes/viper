@@ -2,11 +2,10 @@
 \alias{plot.msviper}
 \title{Plot msviper results}
 \usage{
-  \method{plot}{msviper} (x, mrs = 10,
-    color = c("cornflowerblue", "salmon"), pval = NULL,
-    bins = 500, cex = 0, density = 0, smooth = 0,
-    sep = 0.2, hybrid = TRUE,
-    include = c("expression", "activity"), gama = 2, ...)
+\method{plot}{msviper}(x, mrs = 10, color = c("cornflowerblue", "salmon"),
+  pval = NULL, bins = 500, cex = 0, density = 0, smooth = 0,
+  sep = 0.2, hybrid = TRUE, include = c("expression", "activity"),
+  gama = 2, ...)
 }
 \arguments{
   \item{x}{msviper object produced by \code{msviper}
@@ -56,12 +55,12 @@
   function}
 }
 \value{
-  Nothing, a plot is generated in the default output device
+Nothing, a plot is generated in the default output device
 }
 \description{
-  This function generate a plot for msviper results showing
-  the enrichment of the target genes for each significant
-  master regulator on the gene expression signature
+This function generate a plot for msviper results showing
+the enrichment of the target genes for each significant
+master regulator on the gene expression signature
 }
 \examples{
 data(bcellViper, package="bcellViper")
@@ -71,6 +70,6 @@ mra <- msviper(sig, regulon, dnull)
 plot(mra, cex=.7)
 }
 \seealso{
-  \code{\link{msviper}}
+\code{\link{msviper}}
 }
 

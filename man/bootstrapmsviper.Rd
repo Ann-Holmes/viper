@@ -2,8 +2,7 @@
 \alias{bootstrapmsviper}
 \title{msviper bootstraps integration}
 \usage{
-  bootstrapmsviper(mobj,
-    method = c("mean", "median", "mode"))
+bootstrapmsviper(mobj, method = c("mean", "median", "mode"))
 }
 \arguments{
   \item{mobj}{msviper object}
@@ -12,10 +11,10 @@
   use, either mean, median or mode}
 }
 \value{
-  msviper object
+msviper object
 }
 \description{
-  This function integrates the bootstrap msviper results
+This function integrates the bootstrap msviper results
 }
 \examples{
 data(bcellViper, package="bcellViper")
@@ -24,6 +23,6 @@ mra <- msviper(sig, regulon)
 plot(mra, cex=.7)
 }
 \seealso{
-  \code{\link{msviper}}
+\code{\link{msviper}}
 }
 

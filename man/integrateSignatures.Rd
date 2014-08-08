@@ -2,7 +2,7 @@
 \alias{integrateSignatures}
 \title{Integrate signatures}
 \usage{
-  integrateSignatures(signature, score = 1)
+integrateSignatures(signature, score = 1)
 }
 \arguments{
   \item{signature}{Numeric matrix containing the signatures
@@ -13,11 +13,11 @@
   weight}
 }
 \value{
-  Vector containing the integrated signatures
+Vector containing the integrated signatures
 }
 \description{
-  This function integrates signatures represented as
-  columns in the input matrix using self-weighting average
+This function integrates signatures represented as columns
+in the input matrix using self-weighting average
 }
 \examples{
 data(bcellViper, package="bcellViper")
