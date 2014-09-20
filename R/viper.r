@@ -178,8 +178,6 @@ setMethod("viperSignature", "ExpressionSet", function(eset, pheno, refgroup, met
 setMethod("viperSignature", "matrix", function(eset, ref, method=c("ttest", "zscore", "mean"), per=1000, seed=1, verbose=TRUE) {
     method <- match.arg(method)
     if (seed>0) set.seed(ceiling(seed))
-    pb <- NULL
-    if (verbose) pb <- txtProgressBar(max=per, style=3)
     switch(method,
     ttest={
         vpsig <- apply(eset, 2, function(x, ctrl) {
@@ -195,7 +193,16 @@ setMethod("viperSignature", "matrix", function(eset, ref, method=c("ttest", "zsc
     mean={
         vpsig <- eset-rowMeans(ref)
     })
-    vpnull <- sapply(1:per, function(i, dset, ref, pb, size, verbose, method) {
+    nco <- choose(ncol(ref), round(ncol(ref)/2))
+    if (nco<(50*per)) {
+        per1 <- combn(sample(ncol(ref)), round(ncol(ref)/2))[, 1:min(per, nco)]
+    }
+    else {
+        per1 <- sapply(1:(min(per, nco)), function(i, n1, n2) sample(n1, n2), n1=ncol(ref), n2=round(ncol(ref)/2))
+    }
+    pb <- NULL
+    if (verbose) pb <- txtProgressBar(max=ncol(per1), style=3)
+    vpnull <- sapply(1:ncol(per1), function(i, dset, ref, pb, size, verbose, method, per1) {
         if (verbose) setTxtProgressBar(pb, i)
         switch(method,
         ttest={
@@ -207,15 +214,15 @@ setMethod("viperSignature", "matrix", function(eset, ref, method=c("ttest", "zsc
             }
         },
         zscore={
-            pos <- sample(ncol(ref), round(ncol(ref)/2))
+            pos <- per1[, i]
             tmp <- (rowMeans(ref[, pos])-rowMeans(ref[, -pos]))/(sqrt(frvarna(ref[, pos])[, 1])+sqrt(frvarna(ref[, -pos])[, 1]))
         },
         mean={
-            pos <- sample(ncol(ref), round(ncol(ref)/2))
+            pos <- per1[, i]
             tmp <- rowMeans(ref[, pos])-rowMeans(ref[, -pos])
         })
         return(tmp)
-    }, dset=cbind(eset, ref), ref=ref, size=ncol(ref)+1, pb=pb, verbose=verbose, method=method)
+    }, dset=cbind(eset, ref), ref=ref, size=ncol(ref)+1, pb=pb, verbose=verbose, method=method, per1=per1)
     rownames(vpnull) <- rownames(eset)
     tmp <- list(signature=vpsig, nullmodel=vpnull)
     class(tmp) <- "viperSignature"
