@@ -193,37 +193,47 @@ setMethod("viperSignature", "matrix", function(eset, ref, method=c("ttest", "zsc
     mean={
         vpsig <- eset-rowMeans(ref)
     })
-    nco <- choose(ncol(ref), round(ncol(ref)/2))
-    if (nco<(50*per)) {
-        per1 <- combn(sample(ncol(ref)), round(ncol(ref)/2))[, 1:min(per, nco)]
+    if ((ncol(eset)+ncol(ref))<12) {
+        vpnull <- NULL
+        warning("Not enough samples to compute null model by sample permutation, gene permutation will be used instead", call.=FALSE)
     }
     else {
-        per1 <- sapply(1:(min(per, nco)), function(i, n1, n2) sample(n1, n2), n1=ncol(ref), n2=round(ncol(ref)/2))
+        if (ncol(ref)<12) {
+            warning("Not enough reference samples to compute null model, all samples will be used", call.=FALSE)
+            ref <- cbind(ref, eset)
+        }
+        nco <- choose(ncol(ref), round(ncol(ref)/2))
+        if (nco<(50*per)) {
+            per1 <- combn(sample(ncol(ref)), round(ncol(ref)/2))[, 1:min(per, nco)]
+        }
+        else {
+            per1 <- sapply(1:(min(per, nco)), function(i, n1, n2) sample(n1, n2), n1=ncol(ref), n2=round(ncol(ref)/2))
+        }
+        pb <- NULL
+        if (verbose) pb <- txtProgressBar(max=ncol(per1), style=3)
+        vpnull <- sapply(1:ncol(per1), function(i, dset, ref, pb, size, verbose, method, per1) {
+            if (verbose) setTxtProgressBar(pb, i)
+            switch(method,
+            ttest={
+                tmp <- NA
+                while(any(is.na(tmp))) {
+                    pos <- sample(ncol(dset), size)
+                    tmp <- rowTtest(dset[, pos[1]]-dset[, pos[-1]])
+                    tmp <- (qnorm(tmp$p.value/2, lower.tail=FALSE)*sign(tmp$statistic))[, 1]
+                }
+            },
+            zscore={
+                pos <- per1[, i]
+                tmp <- (rowMeans(ref[, pos])-rowMeans(ref[, -pos]))/(sqrt(frvarna(ref[, pos])[, 1])+sqrt(frvarna(ref[, -pos])[, 1]))
+            },
+            mean={
+                pos <- per1[, i]
+                tmp <- rowMeans(ref[, pos])-rowMeans(ref[, -pos])
+            })
+            return(tmp)
+        }, dset=cbind(eset, ref), ref=ref, size=ncol(ref)+1, pb=pb, verbose=verbose, method=method, per1=per1)
+        rownames(vpnull) <- rownames(eset)
     }
-    pb <- NULL
-    if (verbose) pb <- txtProgressBar(max=ncol(per1), style=3)
-    vpnull <- sapply(1:ncol(per1), function(i, dset, ref, pb, size, verbose, method, per1) {
-        if (verbose) setTxtProgressBar(pb, i)
-        switch(method,
-        ttest={
-            tmp <- NA
-            while(any(is.na(tmp))) {
-                pos <- sample(ncol(dset), size)
-                tmp <- rowTtest(dset[, pos[1]]-dset[, pos[-1]])
-                tmp <- (qnorm(tmp$p.value/2, lower.tail=FALSE)*sign(tmp$statistic))[, 1]
-            }
-        },
-        zscore={
-            pos <- per1[, i]
-            tmp <- (rowMeans(ref[, pos])-rowMeans(ref[, -pos]))/(sqrt(frvarna(ref[, pos])[, 1])+sqrt(frvarna(ref[, -pos])[, 1]))
-        },
-        mean={
-            pos <- per1[, i]
-            tmp <- rowMeans(ref[, pos])-rowMeans(ref[, -pos])
-        })
-        return(tmp)
-    }, dset=cbind(eset, ref), ref=ref, size=ncol(ref)+1, pb=pb, verbose=verbose, method=method, per1=per1)
-    rownames(vpnull) <- rownames(eset)
     tmp <- list(signature=vpsig, nullmodel=vpnull)
     class(tmp) <- "viperSignature"
     return(tmp)
