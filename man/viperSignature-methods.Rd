@@ -19,6 +19,9 @@ viperSignature(eset, ...)
   containing the test dataset, with genes in rows and
   samples in columns}
 
+  \item{...}{Additional parameters added to keep
+  compatibility}
+
   \item{pheno}{Character string indicating the phenotype
   data to use}
 
@@ -41,8 +44,6 @@ viperSignature(eset, ...)
 
   \item{ref}{Numeric matrix containing the reference
   samples (columns) and genes in rows}
-
-  \item{...}{Added in S4 method for compatibility}
 }
 \value{
 viperSignature S3 object containing the signature and null

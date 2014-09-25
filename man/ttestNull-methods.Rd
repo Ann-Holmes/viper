@@ -17,6 +17,9 @@ ttestNull(x, ...)
   \item{x}{ExpressionSet object or Matrix containing the
   test dataset}
 
+  \item{...}{Additional parameters added to keep
+  compatibility}
+
   \item{y}{Matrix containing the reference dataset}
 
   \item{per}{Integer indicating the number of permutations}
@@ -40,8 +43,6 @@ ttestNull(x, ...)
   \item{group2}{Vector of character strings indicating the
   category from phenotype \code{pheno} to use as control
   group}
-
-  \item{...}{Added in S4 method for compatibility}
 }
 \value{
 Matrix of z-scores with genes in rows and permutations in

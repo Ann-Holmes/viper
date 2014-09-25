@@ -201,3 +201,73 @@ scale.signatureDistance <- function(x, center=TRUE, scale=TRUE) {
     mm <- (matrix(diag(x), nrow(x), ncol(x)) + matrix(diag(x), nrow(x), ncol(x), byrow=TRUE))/2
     return(x/mm)
 }
+
+#' VIPER similarity
+#' 
+#' This function computes the similarity between VIPER signatures
+#' 
+#' @param x Numeric matrix containing the VIPER results with samples in columns and regulators in rows
+#' @param nn Optional number of top regulators to consider for computing the similarity
+#' @param ws Number indicating the weighting exponent for the signature, only used if \code{nn} is ommited
+#' @param method Character string indicating whether the most active (greater), less active (less) or both tails (two.sided) of the signature should be used for computing the similarity
+#' @return signatureDistance object
+#' @export
+
+viperSimilarity <- function(x, nn=NULL, ws=2, method=c("greater", "less", "two.sided")) {
+    method <- match.arg(method)
+    x[is.na(x)] <- 0
+    xw <- x
+    if (is.null(nn)) {
+        switch(method,
+               greater={
+                    xw[xw<0] <- 0
+                    xw <- t(t(xw)/apply(x, 2, max))
+               },
+               less={
+                    xw[xw>0] <- 0
+                    xw <- t(t(xw)/apply(abs(x), 2, max))
+               },
+               two.sided={
+                    xw <- t(t(xw)/apply(abs(x), 2, max))
+               })
+        xw <- xw^ws
+    }
+    else {
+        switch(method,
+               greater={
+                   xw <- apply(xw, 2, function(x, nn) {
+                        pos <- rank(-x, ties.method="random")
+                        x[pos>nn] <- NA
+                        return(x)
+                   }, nn=nn)
+               },
+               less={
+                   xw <- apply(xw, 2, function(x, nn) {
+                        pos <- rank(x, ties.method="random")
+                        x[pos>nn] <- NA
+                        return(x)
+                   }, nn=nn)
+               },
+               two.sided={
+                   xw <- apply(xw, 2, function(x, nn) {
+                        pos <- rank(x, ties.method="random")
+                        x[pos>nn & pos < (length(x)-nn+1)] <- NA
+                        return(x)
+                   }, nn=round(nn/2))
+               })
+        xw <- x/abs(xw)
+        xw[is.na(xw)] <- 0
+    }
+    nes <- sqrt(colSums(xw^2))
+    xw <- scale(xw, center=FALSE, scale=colSums(abs(xw)))
+    t2 <- qnorm(apply(x, 2, rank)/(nrow(x)+1))
+    vp <- t(xw) %*% t2
+    vp <- vp * nes
+    tmp <- cbind(vp[lower.tri(vp)], t(vp)[lower.tri(vp)])
+    tmp <- rowSums(tmp*tmp^2)/rowSums(tmp^2)
+    vp[lower.tri(vp)] <- tmp
+    vp <- t(vp)
+    vp[lower.tri(vp)] <- tmp
+    class(vp) <- "signatureDistance"
+    return(vp)
+}

@@ -4,6 +4,7 @@
 #' This function filter redundant probes based on the highest coefficient of variation
 #'
 #' @param expset Expression set or Matrix containing the gene expression data, with samples in columns and probes in rows. The \code{colnames} attribute should contain the sample names and the \code{rownames} attribute should contain the unique geneIDs
+#' @param ... Additional parameters added to keep compatibility
 #' @return CV filtered dataset
 #' @examples
 #' data(bcellViper, package="bcellViper")
@@ -50,6 +51,7 @@ setMethod("filterCV", "ExpressionSet", function(expset) {
 #' This function performs sample permutation and t-test to generate a null model
 #'
 #' @param x ExpressionSet object or Matrix containing the test dataset
+#' @param ... Additional parameters added to keep compatibility
 #' @return Matrix of z-scores with genes in rows and permutations in columns
 #' @seealso \code{\link{msviper}}, \code{\link{viper}}
 #' @export
@@ -127,7 +129,8 @@ setMethod("ttestNull", c(x="ExpressionSet"), function(x, pheno, group1, group2, 
 #' @param y Matrix containing the reference dataset
 #' @param per Integer indicating the number of permutations
 #' @param seed Integer indicating the seed for the permutations, 0 for disable it
-#' #' @param verbose Logical, whether progression messages should be printed in the terminal
+#' @param verbose Logical whether progress should be reported
+#' @param ... Additional parameters added to keep compatibility
 #' @return Matrix of z-scores with genes in rows and permutations in columns
 #' @seealso \code{\link{msviper}}
 #' @export
@@ -359,6 +362,7 @@ fcvarna <- function(x) frvarna(t(x))
 #' This function performs a Student's t-test on each row of a matrix
 #' 
 #' @param x ExpressionSet object or Numerical matrix containing the test samples
+#' @param ... Additional parameters added to keep compatibility
 #' @return List of Student-t-statistic (\code{statistic}) and p-values (\code{p.value})
 #' @export
 #' @docType methods

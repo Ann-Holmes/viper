@@ -129,6 +129,7 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
 #' This function generates a viperSignature object from a test dataset based on a set of samples to use as reference
 #' 
 #' @param eset ExpressionSet object or numeric matrix containing the test dataset, with genes in rows and samples in columns
+#' @param ... Additional parameters added to keep compatibility
 #' @return viperSignature S3 object containing the signature and null model
 #' @export
 #' @docType methods

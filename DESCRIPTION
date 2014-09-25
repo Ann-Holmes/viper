@@ -19,6 +19,3 @@ Description: Inference of protein activity from gene expression data, including
 License: GPL (>=2)
 biocViews: SystemsBiology, NetworkEnrichment, GeneExpression,
     FunctionalPrediction, GeneRegulation
-Collate: 'general.r' 'internal.r' 'ledge.r' 'msviper.r' 'plot.r'
-        'shadow.r' 'viper.r' 'aracne.r' 'signatureDistance.r'
-        'clases.r'

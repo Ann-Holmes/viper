@@ -17,6 +17,9 @@ rowTtest(x, ...)
   \item{x}{ExpressionSet object or Numerical matrix
   containing the test samples}
 
+  \item{...}{Additional parameters added to keep
+  compatibility}
+
   \item{y}{Optional numerical matrix containing the
   reference samples. If ommited \code{x} will be tested
   against mean = \code{mu}}
@@ -37,8 +40,6 @@ rowTtest(x, ...)
   \item{group2}{Vector of character strings indicating the
   category from phenotype \code{pheno} to use as control
   group}
-
-  \item{...}{Added in S4 method for compatibility}
 }
 \value{
 List of Student-t-statistic (\code{statistic}) and p-values

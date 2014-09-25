@@ -10,6 +10,8 @@ aREA function was rewritten with improved performance
 
 Computation of empirical p-values was performed assuming a symmetric distribution of the ES around 0 for the NULL model, increasing in this way the power of the test by a factor of 2
 
+A function to compute the similarity between VIPER signatures (viperSimilarity) was added to the package 
+
 new for version 0.99.1
 ======================
 Bug fixed in shadow() function that was crashing when one regulon was completely contained into another regulon.

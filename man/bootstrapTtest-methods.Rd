@@ -21,10 +21,13 @@ bootstrapTtest(x, ...)
   \item{per}{Integer indicating the number of permutations}
 
   \item{seed}{Integer indicating the seed for the
-  permutations, 0 for disable it #'}
+  permutations, 0 for disable it}
 
-  \item{verbose}{Logical, whether progression messages
-  should be printed in the terminal}
+  \item{verbose}{Logical whether progress should be
+  reported}
+
+  \item{...}{Additional parameters added to keep
+  compatibility}
 
   \item{pheno}{Character string indicating the phenotype
   data to use}
@@ -36,8 +39,6 @@ bootstrapTtest(x, ...)
   \item{group2}{Vector of character strings indicating the
   category from phenotype \code{pheno} to use as control
   group}
-  
-  \item{...}{Added in S4 method for compatibility}
 }
 \value{
 Matrix of z-scores with genes in rows and permutations in

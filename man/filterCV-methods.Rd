@@ -18,7 +18,8 @@ filterCV(expset, ...)
   sample names and the \code{rownames} attribute should
   contain the unique geneIDs}
 
-  \item{...}{Added in S4 method for compatibility}
+  \item{...}{Additional parameters added to keep
+  compatibility}
 }
 \value{
 CV filtered dataset
