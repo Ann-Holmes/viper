@@ -1,0 +1,27 @@
+\name{aREA}
+\alias{aREA}
+\title{analytic Rank-based Enrichment Analysis}
+\usage{
+aREA(eset, regulon, method = c("auto", "matrix", "loop"), verbose = FALSE)
+}
+\arguments{
+  \item{eset}{Matrix containing a set of signatures, with
+  samples in columns and traits in rows}
+
+  \item{regulon}{Regulon object}
+
+  \item{method}{Character string indicating the
+  implementation, either auto, matrix or loop}
+
+  \item{verbose}{Logical, whether a progress bar should be
+  shown}
+}
+\value{
+List of two elements, enrichment score and normalized
+enrichment score
+}
+\description{
+This function performs wREA enrichment analysis on a set of
+signatues
+}
+

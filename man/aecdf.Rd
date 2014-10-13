@@ -1,0 +1,23 @@
+\name{aecdf}
+\alias{aecdf}
+\title{Approximate empirical commulative distribution function}
+\usage{
+aecdf(dnull, symmetric = FALSE)
+}
+\arguments{
+  \item{dnull}{Numerical vector representing the null
+  model}
+
+  \item{symmetric}{Logical, whether the distribution should
+  be treated as symmetric around zero and only one tail
+  should be approximated}
+}
+\value{
+function with two parameters, \code{x} and
+\code{alternative}
+}
+\description{
+This function generates an empirical null model that
+computes a normalized statistics and p-value
+}
+
