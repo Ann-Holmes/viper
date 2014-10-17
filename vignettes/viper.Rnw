@@ -67,11 +67,15 @@ biocLite("bcellViper")
 biocLite("viper")
 @
 
-%--------
-\section{Generating the \emph{regulon} object}
-<<echo=FALSE, results=hide>>=
+%----
+\section{Getting started}
+As first step, we have to load the viper environment with:
+<<echo=TRUE, results=hide>>=
 library(viper)
 @
+
+%--------
+\section{Generating the \emph{regulon} object}
 As described under `Overview of VIPER' (section \ref{sec:overview}), msVIPER and VIPER require a gene expression signature and an appropriate cell context-specific regulatory network. This regulatory network is provided in the format of a class \emph{regulon} object.
 Regulon objects can be generated from networks reverse engineered with the ARACNe algorithm \cite{Basso2005}.
 This is performed by the function \emph{aracne2regulon}, which takes two arguments as input: the ARACNe output \emph{.adj} file, and the expression data-set used by ARACNe to reverse engineer the network.
