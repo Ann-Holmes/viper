@@ -318,7 +318,7 @@ selectTFs <- function(res, n) {
 }
 
 #' @method print msviper
-#' @S3method print msviper
+#' @export
 print.msviper <- function(x, ...) cat("Object of class msviper with ", length(x$es$nes), " regulators.\n", sep="")
 
 #' List msviper results
@@ -330,7 +330,7 @@ print.msviper <- function(x, ...) cat("Object of class msviper with ", length(x$
 #' @param ... Given for compatibility with the summary generic function
 #' @return Data.frame with results
 #' @method summary msviper
-#' @S3method summary msviper
+#' @export
 
 summary.msviper <- function(object, mrs=10, ...) {
     if (length(mrs)==1) {

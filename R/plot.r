@@ -17,7 +17,7 @@
 #' @param ... Given for compatibility to the plot generic function
 #' @return Nothing, a plot is generated in the default output device
 #' @method plot msviper
-#' @S3method plot msviper
+#' @export
 #' @seealso \code{\link{msviper}}
 #' @examples
 #' data(bcellViper, package="bcellViper")

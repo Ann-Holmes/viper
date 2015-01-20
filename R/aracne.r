@@ -76,14 +76,14 @@ aracne2regulon <- function(afile, eset, gene = FALSE, format=c("adj", "3col"), v
 }
 
 #' @method print regulon
-#' @S3method print regulon
+#' @export
 print.regulon <- function(x, ...) {
     targets <- unlist(lapply(x, function(x) names(x$tfmode)), use.names=FALSE)
     cat("Object of class regulon with ", length(x), " regulators, ", length(unique(targets)), " targets and ", length(targets), " interactions\n", sep="")
 }
 
 #' @method summary regulon
-#' @S3method summary regulon
+#' @export
 summary.regulon <- function(object, ...) {
     targets <- unlist(lapply(object, function(x) names(x$tfmode)), use.names=FALSE)
     c(Regulators=length(object), Targets=length(unique(targets)), Interactions=length(targets))

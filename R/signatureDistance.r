@@ -178,7 +178,7 @@ scaleGroups <- function(x, groups) {
 #' @param upper parameter included for compatibility
 #' @return Object of class dist
 #' @method as.dist signatureDistance
-#' @S3method as.dist signatureDistance
+#' @export
 #' @importFrom stats as.dist
 as.dist.signatureDistance <- function(m, diag=FALSE, upper=FALSE) {
     m <- scale(m)
@@ -195,7 +195,7 @@ as.dist.signatureDistance <- function(m, diag=FALSE, upper=FALSE) {
 #' @param scale Not used, given for compatibility with the generic function scale
 #' @return Scaled signatureDistance object
 #' @method scale signatureDistance
-#' @S3method scale signatureDistance
+#' @export
 scale.signatureDistance <- function(x, center=TRUE, scale=TRUE) {
     if (ncol(x) != nrow(x)) return(x/max(abs(x)))
     mm <- (matrix(diag(x), nrow(x), ncol(x)) + matrix(diag(x), nrow(x), ncol(x), byrow=TRUE))/2
@@ -213,7 +213,7 @@ scale.signatureDistance <- function(x, center=TRUE, scale=TRUE) {
 #' @return signatureDistance object
 #' @export
 
-viperSimilarity <- function(x, nn=NULL, ws=2, method=c("greater", "less", "two.sided")) {
+viperSimilarity <- function(x, nn=NULL, ws=2, method=c("two.sided", "greater", "less")) {
     method <- match.arg(method)
     x[is.na(x)] <- 0
     xw <- x
@@ -230,7 +230,7 @@ viperSimilarity <- function(x, nn=NULL, ws=2, method=c("greater", "less", "two.s
                two.sided={
                     xw <- t(t(xw)/apply(abs(x), 2, max))
                })
-        xw <- xw^ws
+        xw <- sign(xw)*abs(xw)^ws
     }
     else {
         switch(method,
