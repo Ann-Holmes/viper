@@ -63,6 +63,7 @@ setGeneric("ttestNull", function(x, ...) standardGeneric("ttestNull"))
 #' @param per Integer indicating the number of permutations
 #' @param repos Logical, whether the permutations should be performed with reposition
 #' @param seed Integer indicating the seed for the permutations, 0 for disable it
+#' @param cores Integer indicating the number of cores to use (set to 1 in windows systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @examples
 #' data(bcellViper, package="bcellViper")
@@ -72,30 +73,51 @@ setGeneric("ttestNull", function(x, ...) standardGeneric("ttestNull"))
 #' plot(density(dnull))
 #' @rdname ttestNull-methods
 #' @aliases ttestNull,matrix-method
-setMethod("ttestNull", c(x="matrix"), function(x, y, per=1000, repos=TRUE, seed=1, verbose=TRUE) {
+setMethod("ttestNull", c(x="matrix"), function(x, y, per=1000, repos=TRUE, seed=1, cores=1, verbose=TRUE) {
     if (seed>0) set.seed(round(seed))
     pb <- NULL
     if (verbose) {
         message(date(), "\nComputing the null model distribution by ", per, " permutations.")
-        pb <- txtProgressBar(max=per, style=3)
     }
-    res <- sapply(1:per, function(i, x, y, repos, pb, verbose) {
-        if (verbose) setTxtProgressBar(pb, i)
-        expset <- cbind(x, y)
-        repeat{
-            sorder <- sample(ncol(expset), replace=repos)
-            if (length(unique(sorder[1:ncol(x)]))>1 & length(unique(sorder[-(1:ncol(x))]))>1) break
-            if (verbose) message("-", appendLF=FALSE)
-        }
-        x1 <- filterColMatrix(expset, sorder[1:ncol(x)])
-        y1 <- filterColMatrix(expset, sorder[-(1:ncol(x))])
-        largo <- rowSums(!is.na(x1))
-        largoy <- rowSums(!is.na(y1))
-        t <- ((rowMeans(x1, na.rm=TRUE) - rowMeans(y1, na.rm=TRUE))/sqrt(((largo - 1) *  rowVars(x1) + (largoy - 1) * rowVars(y1))/(largo + largoy - 2))/sqrt(1/largo + 1/largoy))[, 1]
-        t <- qnorm(pt(abs(t), largo + largoy - 2, lower.tail = FALSE), lower.tail=FALSE)*sign(t)
-        names(t) <- rownames(x)
-        return(t)
-    }, x=x, y=y, repos=repos, pb=pb, verbose=verbose)
+    if (cores>1) {
+        res <- mclapply(1:per, function(i, x, y, repos) {
+            expset <- cbind(x, y)
+            repeat{
+                sorder <- sample(ncol(expset), replace=repos)
+                if (length(unique(sorder[1:ncol(x)]))>1 & length(unique(sorder[-(1:ncol(x))]))>1) break
+                if (verbose) message("-", appendLF=FALSE)
+            }
+            x1 <- filterColMatrix(expset, sorder[1:ncol(x)])
+            y1 <- filterColMatrix(expset, sorder[-(1:ncol(x))])
+            largo <- rowSums(!is.na(x1))
+            largoy <- rowSums(!is.na(y1))
+            t <- ((rowMeans(x1, na.rm=TRUE) - rowMeans(y1, na.rm=TRUE))/sqrt(((largo - 1) *  rowVars(x1) + (largoy - 1) * rowVars(y1))/(largo + largoy - 2))/sqrt(1/largo + 1/largoy))[, 1]
+            t <- qnorm(pt(abs(t), largo + largoy - 2, lower.tail = FALSE), lower.tail=FALSE)*sign(t)
+            names(t) <- rownames(x)
+            return(t)
+        }, x=x, y=y, repos=repos, mc.cores=cores)
+        res <- sapply(res, function(x) x)
+    }
+    else {
+        if (verbose) pb <- txtProgressBar(max=per, style=3)
+        res <- sapply(1:per, function(i, x, y, repos, pb, verbose) {
+            if (verbose) setTxtProgressBar(pb, i)
+            expset <- cbind(x, y)
+            repeat{
+                sorder <- sample(ncol(expset), replace=repos)
+                if (length(unique(sorder[1:ncol(x)]))>1 & length(unique(sorder[-(1:ncol(x))]))>1) break
+                if (verbose) message("-", appendLF=FALSE)
+            }
+            x1 <- filterColMatrix(expset, sorder[1:ncol(x)])
+            y1 <- filterColMatrix(expset, sorder[-(1:ncol(x))])
+            largo <- rowSums(!is.na(x1))
+            largoy <- rowSums(!is.na(y1))
+            t <- ((rowMeans(x1, na.rm=TRUE) - rowMeans(y1, na.rm=TRUE))/sqrt(((largo - 1) *  rowVars(x1) + (largoy - 1) * rowVars(y1))/(largo + largoy - 2))/sqrt(1/largo + 1/largoy))[, 1]
+            t <- qnorm(pt(abs(t), largo + largoy - 2, lower.tail = FALSE), lower.tail=FALSE)*sign(t)
+            names(t) <- rownames(x)
+            return(t)
+        }, x=x, y=y, repos=repos, pb=pb, verbose=verbose)
+    }
     colnames(res) <- 1:per
     if (verbose) message("\n", date())
     return(res)
@@ -129,6 +151,7 @@ setMethod("ttestNull", c(x="ExpressionSet"), function(x, pheno, group1, group2, 
 #' @param y Matrix containing the reference dataset
 #' @param per Integer indicating the number of permutations
 #' @param seed Integer indicating the seed for the permutations, 0 for disable it
+#' @param cores Integer indicating the number of cores to use (set to 1 in Windows-based systems)
 #' @param verbose Logical whether progress should be reported
 #' @param ... Additional parameters added to keep compatibility
 #' @return Matrix of z-scores with genes in rows and permutations in columns
@@ -146,24 +169,39 @@ setGeneric("bootstrapTtest", function(x, ...) standardGeneric("bootstrapTtest"))
 #' plot(density(sig[1907, ]))
 #' @rdname bootstrapTtest-methods
 #' @aliases bootstrapTtest,matrix-method
-setMethod("bootstrapTtest", c(x="matrix"), function(x, y, per=100, seed=1, verbose=TRUE) {
+setMethod("bootstrapTtest", c(x="matrix"), function(x, y, per=100, seed=1, cores=1, verbose=TRUE) {
     if (seed>0) set.seed(round(seed))
     pb <- NULL
     if (verbose) {
         message(date(), "\nComputing the bootstrapped signatures by ", per, " permutations.")
-        pb <- txtProgressBar(max=per, style=3)
     }
-    res <- sapply(1:per, function(i, x, y, pb, verbose) {
-        if (verbose) setTxtProgressBar(pb, i)
-        x1 <- filterColMatrix(x, sample(ncol(x), replace=TRUE))
-        y1 <- filterColMatrix(y, sample(ncol(y), replace=TRUE))
-        largo <- rowSums(!is.na(x1))
-        largoy <- rowSums(!is.na(y1))
-        t <- ((rowMeans(x1, na.rm=TRUE) - rowMeans(y1, na.rm=TRUE))/sqrt(((largo - 1) *  rowVars(x1) + (largoy - 1) * rowVars(y1))/(largo + largoy - 2))/sqrt(1/largo + 1/largoy))[, 1]
-        t <- qnorm(pt(abs(t), largo + largoy - 2, lower.tail = FALSE), lower.tail=FALSE)*sign(t)
-        names(t) <- rownames(x1)
-        return(t)
-    }, x=x, y=y, pb=pb, verbose=verbose)
+    if (cores>1) {
+        res <- mclapply(1:per, function(i, x, y) {
+            x1 <- filterColMatrix(x, sample(ncol(x), replace=TRUE))
+            y1 <- filterColMatrix(y, sample(ncol(y), replace=TRUE))
+            largo <- rowSums(!is.na(x1))
+            largoy <- rowSums(!is.na(y1))
+            t <- ((rowMeans(x1, na.rm=TRUE) - rowMeans(y1, na.rm=TRUE))/sqrt(((largo - 1) *  rowVars(x1) + (largoy - 1) * rowVars(y1))/(largo + largoy - 2))/sqrt(1/largo + 1/largoy))[, 1]
+            t <- qnorm(pt(abs(t), largo + largoy - 2, lower.tail = FALSE), lower.tail=FALSE)*sign(t)
+            names(t) <- rownames(x1)
+            return(t)
+        }, x=x, y=y, mc.cores=cores)
+        res <- sapply(res, function(x) x)
+    }
+    else {
+        if (verbose) pb <- txtProgressBar(max=per, style=3)
+        res <- sapply(1:per, function(i, x, y, pb, verbose) {
+            if (verbose) setTxtProgressBar(pb, i)
+            x1 <- filterColMatrix(x, sample(ncol(x), replace=TRUE))
+            y1 <- filterColMatrix(y, sample(ncol(y), replace=TRUE))
+            largo <- rowSums(!is.na(x1))
+            largoy <- rowSums(!is.na(y1))
+            t <- ((rowMeans(x1, na.rm=TRUE) - rowMeans(y1, na.rm=TRUE))/sqrt(((largo - 1) *  rowVars(x1) + (largoy - 1) * rowVars(y1))/(largo + largoy - 2))/sqrt(1/largo + 1/largoy))[, 1]
+            t <- qnorm(pt(abs(t), largo + largoy - 2, lower.tail = FALSE), lower.tail=FALSE)*sign(t)
+            names(t) <- rownames(x1)
+            return(t)
+        }, x=x, y=y, pb=pb, verbose=verbose)
+    }
     colnames(res) <- 1:per
     if (verbose) message("\n", date())
     return(res)

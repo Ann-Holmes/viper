@@ -4,7 +4,8 @@
 \alias{aREA}
 \title{analytic Rank-based Enrichment Analysis}
 \usage{
-aREA(eset, regulon, method = c("auto", "matrix", "loop"), verbose = FALSE)
+aREA(eset, regulon, method = c("auto", "matrix", "loop"), cores = 1,
+  verbose = FALSE)
 }
 \arguments{
 \item{eset}{Matrix containing a set of signatures, with samples in columns and traits in rows}
@@ -12,6 +13,8 @@ aREA(eset, regulon, method = c("auto", "matrix", "loop"), verbose = FALSE)
 \item{regulon}{Regulon object}
 
 \item{method}{Character string indicating the implementation, either auto, matrix or loop}
+
+\item{cores}{Integer indicating the number of cores to use (only 1 in Windows-based systems)}
 
 \item{verbose}{Logical, whether a progress bar should be shown}
 }

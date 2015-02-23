@@ -8,7 +8,7 @@ viper(eset, regulon, dnull = NULL, pleiotropy = FALSE, nes = TRUE,
   method = c("scale", "rank", "mad", "ttest", "none"), bootstraps = 0,
   minsize = 25, adaptive.size = FALSE, eset.filter = TRUE,
   pleiotropyArgs = list(regulators = 0.05, shadow = 0.05, targets = 10,
-  penalty = 20, method = "adaptive"), verbose = TRUE)
+  penalty = 20, method = "adaptive"), cores = 1, verbose = TRUE)
 }
 \arguments{
 \item{eset}{ExpressionSet object or Numeric matrix containing the expression data or gene expression signatures, with samples in columns and genes in rows}
@@ -32,6 +32,8 @@ viper(eset, regulon, dnull = NULL, pleiotropy = FALSE, nes = TRUE,
 \item{eset.filter}{Logical, whether the dataset should be limited only to the genes represented in the interactome}
 
 \item{pleiotropyArgs}{list of 5 numbers for the pleotropy correction indicating: regulators p-value threshold, pleiotropic interaction p-value threshold, minimum number of targets in the overlap between pleiotropic regulators, penalty for the pleiotropic interactions and the method for computing the pleiotropy, either absolute or adaptive}
+
+\item{cores}{Integer indicating the number of cores to use (only 1 in Windows-based systems)}
 
 \item{verbose}{Logical, whether progression messages should be printed in the terminal}
 }

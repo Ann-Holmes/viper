@@ -3,7 +3,7 @@
 #' This function computes the similarity between columns of a data matrix
 #' @param dset1 Dataset of any type in matrix format, with features in rows and samples in columns
 #' @param dset2 Optional Dataset. If provided, distance between columns of dset and dset2 are computed and reported as rows and columns, respectively; if not, distance between all possible pairs of columns from dset are computed
-#' @param nn Optional size for the signature, default is either the full signature or 10% of it, depending or whether \code{ws}=0 or not)
+#' @param nn Optional size for the signature, default is either the full signature or 10\% of it, depending or whether \code{ws}=0 or not)
 #' @param groups Optional vector indicating the group ID of the samples
 #' @param scale. Logical, whether the data should be scaled
 #' @param two.tails Logical, whether a two tails, instead of 1 tail test should be performed

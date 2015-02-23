@@ -7,7 +7,7 @@
 msviper(ges, regulon, nullmodel = NULL, pleiotropy = FALSE, minsize = 25,
   adaptive.size = FALSE, ges.filter = TRUE, synergy = 0, level = 10,
   pleiotropyArgs = list(regulators = 0.05, shadow = 0.05, targets = 10,
-  penalty = 20, method = "adaptive"), verbose = TRUE)
+  penalty = 20, method = "adaptive"), cores = 1, verbose = TRUE)
 }
 \arguments{
 \item{ges}{Vector containing the gene expression signature to analyze, or matrix with columns containing bootstraped signatures}
@@ -29,6 +29,8 @@ msviper(ges, regulon, nullmodel = NULL, pleiotropy = FALSE, minsize = 25,
 \item{level}{Integer, maximum level of combinatorial regulation}
 
 \item{pleiotropyArgs}{list of 5 numbers for the pleotropy correction indicating: regulators p-value threshold, pleiotropic interaction p-value threshold, minimum number of targets in the overlap between pleiotropic regulators, penalty for the pleiotropic interactions and the pleiotropy analysis method, either absolute or adaptive}
+
+\item{cores}{Integer indicating the number of cores to use (only 1 in Windows-based systems)}
 
 \item{verbose}{Logical, whether progression messages should be printed in the terminal}
 }

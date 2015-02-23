@@ -1,5 +1,5 @@
 Package: viper
-Version: 1.2.0
+Version: 1.2.1
 Date: 2013-04-09
 Title: Virtual Inference of Protein-activity by Enriched Regulon
     analysis
@@ -11,7 +11,8 @@ Depends:
     methods
 Imports:
     mixtools,
-    stats
+    stats,
+    parallel
 Suggests:
     bcellViper
 Description: Inference of protein activity from gene expression data, including

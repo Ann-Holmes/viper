@@ -11,10 +11,10 @@ viperSignature(eset, ...)
 
 \S4method{viperSignature}{ExpressionSet}(eset, pheno, refgroup,
   method = c("ttest", "zscore", "mean"), per = 1000, seed = 1,
-  verbose = TRUE)
+  cores = 1, verbose = TRUE)
 
 \S4method{viperSignature}{matrix}(eset, ref, method = c("ttest", "zscore",
-  "mean"), per = 1000, seed = 1, verbose = TRUE)
+  "mean"), per = 1000, seed = 1, cores = 1, verbose = TRUE)
 }
 \arguments{
 \item{eset}{ExpressionSet object or numeric matrix containing the test dataset, with genes in rows and samples in columns}
@@ -30,6 +30,8 @@ viperSignature(eset, ...)
 \item{per}{Integer indicating the number of sample permutations}
 
 \item{seed}{Integer indicating the seed for the random sample generation. The system default is used when set to zero}
+
+\item{cores}{Integer indicating the number of cores to use (only 1 in Windows-based systems)}
 
 \item{verbose}{Logical, whether progression messages should be printed in the terminal}
 

@@ -4,12 +4,14 @@
 \alias{pwea3NULLgroups}
 \title{Regulon-specific NULL model}
 \usage{
-pwea3NULLgroups(pwnull, groups, verbose = TRUE)
+pwea3NULLgroups(pwnull, groups, cores = 1, verbose = TRUE)
 }
 \arguments{
 \item{pwnull}{Numerical matrix representing the null model, with genes as rows (geneID as rownames) and permutations as columns}
 
 \item{groups}{List containing the regulons}
+
+\item{cores}{Integer indicating the number of cores to use (only 1 in Windows-based systems)}
 
 \item{verbose}{Logical, whether progression messages should be printed in the terminal}
 }

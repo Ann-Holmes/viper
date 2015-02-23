@@ -12,7 +12,7 @@ signatureDistance(dset1, dset2 = NULL, nn = NULL, groups = NULL,
 
 \item{dset2}{Optional Dataset. If provided, distance between columns of dset and dset2 are computed and reported as rows and columns, respectively; if not, distance between all possible pairs of columns from dset are computed}
 
-\item{nn}{Optional size for the signature, default is either the full signature or 10% of it, depending or whether \code{ws}=0 or not)}
+\item{nn}{Optional size for the signature, default is either the full signature or 10\% of it, depending or whether \code{ws}=0 or not)}
 
 \item{groups}{Optional vector indicating the group ID of the samples}
 

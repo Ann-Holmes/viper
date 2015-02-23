@@ -23,6 +23,7 @@ updateRegulon <- function(regul) {
 #' @param alternative Character string indicating the alternative hypothesis, either two.sided, greater or less
 #' @param per Integer indicating the number of permutations for the genes in case "nullpw" is ommited
 #' @param minsize Integer indicating the minimum size for the regulons
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @return A list containing four matrices:
 #' \describe{
@@ -32,7 +33,7 @@ updateRegulon <- function(regul) {
 #' \item{p.value}{Enrichment p.value}
 #' }
 
-groupPwea3 <- function(rlist, groups, nullpw=NULL, alternative=c("two.sided", "less", "greater"), per=0, minsize=5, verbose=TRUE) {
+groupPwea3 <- function(rlist, groups, nullpw=NULL, alternative=c("two.sided", "less", "greater"), per=0, minsize=5, cores=1, verbose=TRUE) {
     alternative <- match.arg(alternative)
     if (is.vector(rlist)) rlist <- matrix(rlist, length(rlist), 1, dimnames=list(names(rlist), NULL))
     if (!is.list(groups) | names(groups)[1]=="tfmode") groups <- list(set=groups)
@@ -57,25 +58,40 @@ groupPwea3 <- function(rlist, groups, nullpw=NULL, alternative=c("two.sided", "l
 		}
 		else nullpw <- ppwea3NULLf(groups)
     }
-    if (names(nullpw)[1]=="eset") nullpw <- pwea3NULLgroups(nullpw, groups, verbose=verbose)
-    if (names(nullpw)[1]=="groups") nullpw <- pwea3NULLf(nullpw, verbose=verbose)
+    if (names(nullpw)[1]=="eset") nullpw <- pwea3NULLgroups(nullpw, groups, cores=cores, verbose=verbose)
+    if (names(nullpw)[1]=="groups") nullpw <- pwea3NULLf(nullpw, cores=cores, verbose=verbose)
     pb <- NULL
     if (verbose) {
         message("\nComputing enrichment by PWEA3 on ", length(groups), " gene-sets.")
         message("Process started at ", date())
-        pb <- txtProgressBar(max=length(groups), style=3)
     }
-    es <- sapply(1:length(groups), function(i, reg, r1, r2, pb, verbose) {
-        reg <- reg[[i]]
-        pos <- match(names(reg$tfmode), rownames(r1))
-		ll <- reg$likelihood / sum(reg$likelihood)
-        sum1 <- t(filterRowMatrix(r2, pos)) %*% matrix(reg$tfmode * ll, length(ll), 1)
-        ss <- sign(sum1)
-        ss[ss==0] <- 1
-        if (verbose) setTxtProgressBar(pb, i)
-        sum2 <- t(filterRowMatrix(r1, pos)) %*% matrix(ll * (1-abs(reg$tfmode)), length(ll), 1)
-        return((abs(sum1)+(sum2*(sum2>0))) * ss)
-    }, reg=groups, r1=rlist1, r2=rlist2, pb=pb, verbose=verbose)
+    if (cores>1) {
+        es <- mclapply(1:length(groups), function(i, reg, r1, r2) {
+            reg <- reg[[i]]
+            pos <- match(names(reg$tfmode), rownames(r1))
+            ll <- reg$likelihood / sum(reg$likelihood)
+            sum1 <- t(filterRowMatrix(r2, pos)) %*% matrix(reg$tfmode * ll, length(ll), 1)
+            ss <- sign(sum1)
+            ss[ss==0] <- 1
+            sum2 <- t(filterRowMatrix(r1, pos)) %*% matrix(ll * (1-abs(reg$tfmode)), length(ll), 1)
+            return((abs(sum1)+(sum2*(sum2>0))) * ss)
+        }, reg=groups, r1=rlist1, r2=rlist2, mc.cores=cores)
+        es <- sapply(es, function(x) x)    
+    }
+    else {
+        if (verbose) pb <- txtProgressBar(max=length(groups), style=3)
+        es <- sapply(1:length(groups), function(i, reg, r1, r2, pb, verbose) {
+            reg <- reg[[i]]
+            pos <- match(names(reg$tfmode), rownames(r1))
+            ll <- reg$likelihood / sum(reg$likelihood)
+            sum1 <- t(filterRowMatrix(r2, pos)) %*% matrix(reg$tfmode * ll, length(ll), 1)
+            ss <- sign(sum1)
+            ss[ss==0] <- 1
+            if (verbose) setTxtProgressBar(pb, i)
+            sum2 <- t(filterRowMatrix(r1, pos)) %*% matrix(ll * (1-abs(reg$tfmode)), length(ll), 1)
+            return((abs(sum1)+(sum2*(sum2>0))) * ss)
+        }, reg=groups, r1=rlist1, r2=rlist2, pb=pb, verbose=verbose)
+    }
     names(es) <- names(groups)
     if (is.vector(es)) es <- matrix(es, 1, length(es), dimnames=list(NULL, names(es)))
 	colnames(es) <- names(groups)
@@ -96,6 +112,7 @@ groupPwea3 <- function(rlist, groups, nullpw=NULL, alternative=c("two.sided", "l
 #'
 #' @param pwnull Numerical matrix representing the null model, with genes as rows (geneID as rownames) and permutations as columns
 #' @param groups List containing the regulons
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @return A list containing two elements:
 #' \describe{
@@ -103,7 +120,7 @@ groupPwea3 <- function(rlist, groups, nullpw=NULL, alternative=c("two.sided", "l
 #' \item{ss}{Direction of the regulon-specific NULL model}
 #' }
 
-pwea3NULLgroups <- function(pwnull, groups, verbose=TRUE) {
+pwea3NULLgroups <- function(pwnull, groups, cores=1, verbose=TRUE) {
 	if (is.null(pwnull)) return(NULL)
     if (is.matrix(pwnull)) pwnull <- list(eset=pwnull)
     groups <- updateRegulon(groups)
@@ -123,18 +140,31 @@ pwea3NULLgroups <- function(pwnull, groups, verbose=TRUE) {
     if (verbose) {
         message("\nComputing the null distribution for ", length(groups), " gene-sets.")
         message("Process started at ", date())
-        pb <- txtProgressBar(max=length(groups), style=3)
     }
-    temp <- lapply(1:length(groups), function(i, groups, t1, t2, pb, verbose) {
-        x <- groups[[i]]
-        pos <- match(names(x$tfmode), rownames(t1))
-        sum1 <- matrix(x$tfmode * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t2, pos)
-        ss <- sign(sum1)
-        ss[ss==0] <- 1
-        if (verbose) setTxtProgressBar(pb, i)
-        sum2 <- matrix((1-abs(x$tfmode)) * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t1, pos)
-        return(list(es=as.vector(abs(sum1) + sum2*(sum2>0)) / sum(x$likelihood), ss=ss))
-    }, groups=groups, pb=pb, t1=t1, t2=t2, verbose=verbose)
+    if (cores>1) {
+        temp <- mclapply(1:length(groups), function(i, groups, t1, t2) {
+            x <- groups[[i]]
+            pos <- match(names(x$tfmode), rownames(t1))
+            sum1 <- matrix(x$tfmode * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t2, pos)
+            ss <- sign(sum1)
+            ss[ss==0] <- 1
+            sum2 <- matrix((1-abs(x$tfmode)) * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t1, pos)
+            return(list(es=as.vector(abs(sum1) + sum2*(sum2>0)) / sum(x$likelihood), ss=ss))
+        }, groups=groups, t1=t1, t2=t2, mc.cores=cores)
+    }
+    else {
+        if (verbose) pb <- txtProgressBar(max=length(groups), style=3)
+        temp <- lapply(1:length(groups), function(i, groups, t1, t2, pb, verbose) {
+            x <- groups[[i]]
+            pos <- match(names(x$tfmode), rownames(t1))
+            sum1 <- matrix(x$tfmode * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t2, pos)
+            ss <- sign(sum1)
+            ss[ss==0] <- 1
+            if (verbose) setTxtProgressBar(pb, i)
+            sum2 <- matrix((1-abs(x$tfmode)) * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t1, pos)
+            return(list(es=as.vector(abs(sum1) + sum2*(sum2>0)) / sum(x$likelihood), ss=ss))
+        }, groups=groups, pb=pb, t1=t1, t2=t2, verbose=verbose)
+    }
     names(temp) <- names(groups)
     if (verbose) message("\nProcess ended at ", date())
     es <- t(sapply(temp, function(x) x$es))
@@ -147,39 +177,64 @@ pwea3NULLgroups <- function(pwnull, groups, verbose=TRUE) {
 #' This function generates the NULL model function, which computes the normalized enrichment score and associated p-value
 #'
 #' @param pwnull Object generated by \code{pwea3NULLgroups} function
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @return List of function to compute NES and p-value
 
-pwea3NULLf <- function(pwnull, verbose=TRUE) {
+pwea3NULLf <- function(pwnull, cores=1, verbose=TRUE) {
 	if (!is.null(pwnull)) {
         pb <- NULL
         if (verbose) {
             message("\nComputing the null distribution function for ", nrow(pwnull$groups), " TFs.")
             message("Process started at ", date())
-            pb <- txtProgressBar(max=nrow(pwnull$groups), style=3)
         }
-		res <- lapply(1:nrow(pwnull$groups), function(i, pwnull, pb, verbose) {
-            if (verbose) setTxtProgressBar(pb, i)
-            x <- pwnull$groups[i, ]
-            iqr <- quantile(x, c(.5, 1-5/length(x)))
-            pd <- ecdf(x)
-            a <- list(x=knots(pd), y=pd(knots(pd)))
-            filtro <- a$x>iqr[1] & a$x<=iqr[2] & a$y<1
-            spl <- smooth.spline(a$x[filtro], -log(1-a$y[filtro]), spar=.75)
-            return(function(x, alternative="greater") {
-                x <- abs(x)
-                p <- exp(-predict(spl, x)$y)
-                pos <- which(x<iqr[1])
-                if (length(pos)>0) p[pos] <- 1-pd(x[pos])
-                nes <- qnorm(p/2, lower.tail=FALSE)
-                if (length(p)==1) {
-                    p <- as.vector(p)
-                    nes <- as.vector(nes)
-                }
-                list(nes=nes*pwnull$ss[i], p.value=p)
-        })
-		}, pwnull=pwnull, pb=pb, verbose=verbose)
-		if (verbose) message("\nProcess ended at ", date(), "\n", sep="")
+        if (cores>1) {
+            res <- mclapply(1:nrow(pwnull$groups), function(i, pwnull) {
+                x <- pwnull$groups[i, ]
+                iqr <- quantile(x, c(.5, 1-5/length(x)))
+                pd <- ecdf(x)
+                a <- list(x=knots(pd), y=pd(knots(pd)))
+                filtro <- a$x>iqr[1] & a$x<=iqr[2] & a$y<1
+                spl <- smooth.spline(a$x[filtro], -log(1-a$y[filtro]), spar=.75)
+                return(function(x, alternative="greater") {
+                    x <- abs(x)
+                    p <- exp(-predict(spl, x)$y)
+                    pos <- which(x<iqr[1])
+                    if (length(pos)>0) p[pos] <- 1-pd(x[pos])
+                    nes <- qnorm(p/2, lower.tail=FALSE)
+                    if (length(p)==1) {
+                        p <- as.vector(p)
+                        nes <- as.vector(nes)
+                    }
+                    list(nes=nes*pwnull$ss[i], p.value=p)
+                })
+            }, pwnull=pwnull, mc.cores=cores)
+        }
+        else {
+            if (verbose) pb <- txtProgressBar(max=nrow(pwnull$groups), style=3)
+            res <- lapply(1:nrow(pwnull$groups), function(i, pwnull, pb, verbose) {
+                if (verbose) setTxtProgressBar(pb, i)
+                x <- pwnull$groups[i, ]
+                iqr <- quantile(x, c(.5, 1-5/length(x)))
+                pd <- ecdf(x)
+                a <- list(x=knots(pd), y=pd(knots(pd)))
+                filtro <- a$x>iqr[1] & a$x<=iqr[2] & a$y<1
+                spl <- smooth.spline(a$x[filtro], -log(1-a$y[filtro]), spar=.75)
+                return(function(x, alternative="greater") {
+                    x <- abs(x)
+                    p <- exp(-predict(spl, x)$y)
+                    pos <- which(x<iqr[1])
+                    if (length(pos)>0) p[pos] <- 1-pd(x[pos])
+                    nes <- qnorm(p/2, lower.tail=FALSE)
+                    if (length(p)==1) {
+                        p <- as.vector(p)
+                        nes <- as.vector(nes)
+                    }
+                    list(nes=nes*pwnull$ss[i], p.value=p)
+                })
+            }, pwnull=pwnull, pb=pb, verbose=verbose)
+        }
+        if (verbose) message("\nProcess ended at ", date(), "\n", sep="")
 		names(res) <- rownames(pwnull$groups)
 		return(res)
 	}

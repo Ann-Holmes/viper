@@ -9,7 +9,7 @@
 \usage{
 bootstrapTtest(x, ...)
 
-\S4method{bootstrapTtest}{matrix}(x, y, per = 100, seed = 1,
+\S4method{bootstrapTtest}{matrix}(x, y, per = 100, seed = 1, cores = 1,
   verbose = TRUE)
 
 \S4method{bootstrapTtest}{ExpressionSet}(x, pheno, group1, group2, per = 100,
@@ -25,6 +25,8 @@ bootstrapTtest(x, ...)
 \item{per}{Integer indicating the number of permutations}
 
 \item{seed}{Integer indicating the seed for the permutations, 0 for disable it}
+
+\item{cores}{Integer indicating the number of cores to use (set to 1 in Windows-based systems)}
 
 \item{verbose}{Logical whether progress should be reported}
 

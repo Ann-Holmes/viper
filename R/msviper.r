@@ -12,6 +12,7 @@
 #' @param synergy Number indicating the synergy computation mode: (0) for no synergy computation; (0-1) for establishing the p-value cutoff for individual TFs to be included in the synergy analysis; (>1) number of top TFs to be included in the synergy analysis
 #' @param level Integer, maximum level of combinatorial regulation
 #' @param pleiotropyArgs list of 5 numbers for the pleotropy correction indicating: regulators p-value threshold, pleiotropic interaction p-value threshold, minimum number of targets in the overlap between pleiotropic regulators, penalty for the pleiotropic interactions and the pleiotropy analysis method, either absolute or adaptive
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @return A msviper object containing the following components:
 #' \describe{
@@ -29,7 +30,7 @@
 #' plot(mra, cex=.7)
 #' @export
 
-msviper <- function(ges, regulon, nullmodel=NULL, pleiotropy=FALSE, minsize=25, adaptive.size=FALSE, ges.filter=TRUE, synergy=0, level=10, pleiotropyArgs=list(regulators=.05, shadow=.05, targets=10, penalty=20, method="adaptive"), verbose=TRUE) {
+msviper <- function(ges, regulon, nullmodel=NULL, pleiotropy=FALSE, minsize=25, adaptive.size=FALSE, ges.filter=TRUE, synergy=0, level=10, pleiotropyArgs=list(regulators=.05, shadow=.05, targets=10, penalty=20, method="adaptive"), cores=1, verbose=TRUE) {
 # Cleaning the parameters
 	if (is.vector(ges)) ges <- matrix(ges, length(ges), 1, dimnames=list(names(ges), NULL))
 	regulon <- updateRegulon(regulon)
@@ -49,11 +50,11 @@ msviper <- function(ges, regulon, nullmodel=NULL, pleiotropy=FALSE, minsize=25, 
 	}
 	else regulon <- regulon[sapply(regulon, function(x) length(x$tfmode))>=minsize]
     if (verbose) message("Computing regulon enrichment with aREA algorithm")
-    res <- aREA(ges, regulon, method="loop", verbose=verbose)
+    res <- aREA(ges, regulon, method="loop", cores=cores, verbose=verbose)
     if (is.null(nullmodel)) nes <- res$nes
     else {
         if (verbose) message("\nEstimating the normalized enrichment scores")
-        tmp <- aREA(nullmodel, regulon, verbose=verbose)$es
+        tmp <- aREA(nullmodel, regulon, cores=cores, verbose=verbose)$es
         nes <- t(sapply(1:nrow(tmp), function(i, tmp, es) {
             aecdf(tmp[i, ], symmetric=TRUE)(es[i, ])$nes
         }, tmp=tmp, es=res$es))
@@ -65,22 +66,40 @@ msviper <- function(ges, regulon, nullmodel=NULL, pleiotropy=FALSE, minsize=25, 
         if (verbose) {
             message("\nComputing pleiotropy for ", ncol(nes), " samples.")
             message("\nProcess started at ", date())
-            pb <- txtProgressBar(max=ncol(nes), style=3)
         }
-        nes <- sapply(1:ncol(nes), function(i, ss, nes, regulon, args, dnull, pb) {
-            nes <- nes[, i]
-            sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
-            if (!is.null(sreg)) {
-                if (is.null(dnull)) tmp <-aREA(ss[, i], sreg)$nes[, 1]
-                else {
-                    tmp <- aREA(cbind(ss[, i], dnull), sreg)$es
-                    tmp <- apply(tmp, 1, function(x) aecdf(x[-1], symmetric=TRUE)(x[1])$nes)
+        if (cores>1) {
+            nes <- mclapply(1:ncol(nes), function(i, ss, nes, regulon, args, dnull) {
+                nes <- nes[, i]
+                sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
+                if (!is.null(sreg)) {
+                    if (is.null(dnull)) tmp <- aREA(ss[, i], sreg, cores=1)$nes[, 1]
+                    else {
+                        tmp <- aREA(cbind(ss[, i], dnull), sreg, cores=1)$es
+                        tmp <- apply(tmp, 1, function(x) aecdf(x[-1], symmetric=TRUE)(x[1])$nes)
+                    }
+                    nes[match(names(tmp), names(nes))] <- tmp
                 }
-                nes[match(names(tmp), names(nes))] <- tmp
-            }
-            if (is(pb, "txtProgressBar")) setTxtProgressBar(pb, i)    
-            return(nes)
-        }, ss=ges, nes=nes, regulon=regulon, args=pleiotropyArgs, dnull=nullmodel, pb=pb)
+                return(nes)
+            }, ss=ges, nes=nes, regulon=regulon, args=pleiotropyArgs, dnull=nullmodel, mc.cores=cores)
+            nes <- sapply(nes, function(x) x)    
+        }
+        else {
+            if (verbose) pb <- txtProgressBar(max=ncol(nes), style=3)
+            nes <- sapply(1:ncol(nes), function(i, ss, nes, regulon, args, dnull, pb) {
+                nes <- nes[, i]
+                sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
+                if (!is.null(sreg)) {
+                    if (is.null(dnull)) tmp <-aREA(ss[, i], sreg)$nes[, 1]
+                    else {
+                        tmp <- aREA(cbind(ss[, i], dnull), sreg)$es
+                        tmp <- apply(tmp, 1, function(x) aecdf(x[-1], symmetric=TRUE)(x[1])$nes)
+                    }
+                    nes[match(names(tmp), names(nes))] <- tmp
+                }
+                if (is(pb, "txtProgressBar")) setTxtProgressBar(pb, i)    
+                return(nes)
+            }, ss=ges, nes=nes, regulon=regulon, args=pleiotropyArgs, dnull=nullmodel, pb=pb)
+        }
         if (verbose) message("\nProcess ended at ", date(), "\n")
         colnames(nes) <- colnames(ges)
     }
@@ -128,6 +147,7 @@ bootstrapmsviper <- function(mobj, method=c("mean", "median", "mode")) {
 #' @param minsize Number indicating the minimum allowed size for the regulons, taken from \code{mobj} by default
 #' @param adaptive.size Logical, whether the weight (likelihood) should be used for computing the size, taken from \code{mobj} by default
 #' @param level Integer, maximum level of combinatorial regulation
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @return A msviper object
 #' @seealso \code{\link{msviper}}
@@ -139,7 +159,7 @@ bootstrapmsviper <- function(mobj, method=c("mean", "median", "mode")) {
 #' mra <- msviperCombinatorial(mra, 50)
 #' plot(mra, cex=.7)
 #' @export
-msviperCombinatorial <- function(mobj, regulators=100, nullmodel=NULL, minsize=NULL, adaptive.size=NULL, level=10, verbose=TRUE) {
+msviperCombinatorial <- function(mobj, regulators=100, nullmodel=NULL, minsize=NULL, adaptive.size=NULL, level=10, cores=1, verbose=TRUE) {
     synergy <- regulators
     if (is.null(minsize)) minsize <- mobj$param$minsize
 	if (is.null(adaptive.size)) adaptive.size <- mobj$param$adaptive.size
@@ -159,7 +179,7 @@ msviperCombinatorial <- function(mobj, regulators=100, nullmodel=NULL, minsize=N
 	n=2
 	while(length(tfs)>n & n<=level) {
 		if (verbose) message("\n-------------------------------------------\nComputing synergy for combination of ", n, " TFs\n-------------------------------------------\n\n")
-		res1 <- comregulationAnalysis(combn(tfs, n), mobj$signature, regulon, nullmodel, resp, res1$es$p.value, minsize, adaptive.size, verbose=verbose)
+		res1 <- comregulationAnalysis(combn(tfs, n), mobj$signature, regulon, nullmodel, resp, res1$es$p.value, minsize, adaptive.size, cores=cores, verbose=verbose)
 		if(length(res1)==0) break
 		res <- c(res, list(res1$es))
 		regul <- c(regul, res1$regul)
@@ -189,6 +209,7 @@ msviperCombinatorial <- function(mobj, regulators=100, nullmodel=NULL, minsize=N
 #' @param mobj msviper object containing combinatorial regulation results generated by \code{msviperCombinatorial}
 #' @param per Integer indicating the number of permutations
 #' @param seed Integer indicating the seed for the permutations, 0 for disable it
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @return Updated msviper object containing the sygergy p-value
 #' @seealso \code{\link{msviper}}
@@ -202,62 +223,113 @@ msviperCombinatorial <- function(mobj, regulators=100, nullmodel=NULL, minsize=N
 #' summary(mra)
 #' @export
 
-msviperSynergy <- function(mobj, per=1000, seed=1, verbose=TRUE) {
+msviperSynergy <- function(mobj, per=1000, seed=1, cores=1, verbose=TRUE) {
     if (seed>0) set.seed(round(seed))
     pos <- which(sapply(strsplit(names(mobj$regulon), "--"), length)>1)
     pb <- NULL
     if (verbose) {
         message("\nComputing synergy statistics for ", length(pos), " co-regulons.")
         message("Process started at ", date())
-        pb <- txtProgressBar(max=length(pos), style=3)
     }
-	res <- sapply(1:length(pos), function(i, pos, ss, nes, regul, pb, verbose) {
-        if (verbose) setTxtProgressBar(pb, i)
-        i <- pos[i]
-        pos <- match(unlist(strsplit(names(regul)[i], "--")), names(regul))
-		tgs <- unique(unlist(lapply(regul[pos], function(x) names(x$tfmode)), use.names=FALSE))
-		tfmode <- sapply(regul[pos], function(x, tgs) x$tfmode[match(tgs, names(x$tfmode))], tgs=tgs)
-		rownames(tfmode) <- tgs
-		tfmode <- t(t(tfmode)*sign(nes[match(names(regul)[pos], names(nes))]))
-		tfmode[is.na(tfmode)] <- 0
-		ll <- sapply(regul[pos], function(x, tgs) x$likelihood[match(tgs, names(x$tfmode))], tgs=tgs)
-		ll[is.na(ll)] <- 0
-		ll1 <- ll/rowSums(ll)
-		tfmode <- rowSums(tfmode*ll1)
-		ll <- apply(ll, 1, max)
-		tgs <- names(regul[[i]]$tfmode)
-        r2 <- apply(ss, 2, rank)/(nrow(ss)+1)*2-1
-        r1 <- abs(r2)*2-1
-        r1[r1==(-1)] <- 1-(1/length(r1))
-        r1 <- qnorm(r1/2+.5)
-        r2 <- qnorm(r2/2+.5)
-        dim(r1) <- dim(r2) <- dim(ss)
-		rownames(r1) <- rownames(r2) <- rownames(ss)
-        pos <- match(names(tfmode), rownames(r1))
-        r1 <- filterRowMatrix(r1, pos)
-        r2 <- filterRowMatrix(r2, pos)
-		dnull <- sapply(1:per, function(i, ll, samp) {
-			ll[sample(length(ll), samp)] <- 0
-			return(ll)
-		}, ll=ll, samp=length(tgs))
-		dnull <- cbind(ll, dnull)
-		dnull[match(tgs, names(tfmode)), 1] <- 0
-		dnull <- t(t(dnull)/colSums(dnull))		
-		sum1 <- t(r2) %*% (dnull*tfmode)
-        sum2 <- t(r1) %*% (dnull * (1-abs(tfmode)))
-        es <- colMeans(abs(sum1)+sum2*(sum2>0))
-		x <- es[1]
-		es <- es[-1]
-        iqr <- quantile(es, c(.5, 5/length(es)))
-        pd <- ecdf(es)
-        a <- list(x=knots(pd), y=pd(knots(pd)))
-        filtro <- a$x<iqr[1] & a$x>=iqr[2] & a$y<1
-        spl <- smooth.spline(a$x[filtro], -log(a$y[filtro]), spar=.75)
-        p <- exp(-predict(spl, x)$y)
-        pos <- which(x>iqr[1])
-        if (x>iqr[1]) p <- pd(x)
-        return(p)
-	}, ss=mobj$signature, nes=mobj$es$nes, regul=mobj$regulon, pos=pos, pb=pb, verbose=verbose)
+    if (cores>1) {
+        res <- mclapply(1:length(pos), function(i, pos, ss, nes, regul) {
+            i <- pos[i]
+            pos <- match(unlist(strsplit(names(regul)[i], "--")), names(regul))
+            tgs <- unique(unlist(lapply(regul[pos], function(x) names(x$tfmode)), use.names=FALSE))
+            tfmode <- sapply(regul[pos], function(x, tgs) x$tfmode[match(tgs, names(x$tfmode))], tgs=tgs)
+            rownames(tfmode) <- tgs
+            tfmode <- t(t(tfmode)*sign(nes[match(names(regul)[pos], names(nes))]))
+            tfmode[is.na(tfmode)] <- 0
+            ll <- sapply(regul[pos], function(x, tgs) x$likelihood[match(tgs, names(x$tfmode))], tgs=tgs)
+            ll[is.na(ll)] <- 0
+            ll1 <- ll/rowSums(ll)
+            tfmode <- rowSums(tfmode*ll1)
+            ll <- apply(ll, 1, max)
+            tgs <- names(regul[[i]]$tfmode)
+            r2 <- apply(ss, 2, rank)/(nrow(ss)+1)*2-1
+            r1 <- abs(r2)*2-1
+            r1[r1==(-1)] <- 1-(1/length(r1))
+            r1 <- qnorm(r1/2+.5)
+            r2 <- qnorm(r2/2+.5)
+            dim(r1) <- dim(r2) <- dim(ss)
+            rownames(r1) <- rownames(r2) <- rownames(ss)
+            pos <- match(names(tfmode), rownames(r1))
+            r1 <- filterRowMatrix(r1, pos)
+            r2 <- filterRowMatrix(r2, pos)
+            dnull <- sapply(1:per, function(i, ll, samp) {
+                ll[sample(length(ll), samp)] <- 0
+                return(ll)
+            }, ll=ll, samp=length(tgs))
+            dnull <- cbind(ll, dnull)
+            dnull[match(tgs, names(tfmode)), 1] <- 0
+            dnull <- t(t(dnull)/colSums(dnull))		
+            sum1 <- t(r2) %*% (dnull*tfmode)
+            sum2 <- t(r1) %*% (dnull * (1-abs(tfmode)))
+            es <- colMeans(abs(sum1)+sum2*(sum2>0))
+            x <- es[1]
+            es <- es[-1]
+            iqr <- quantile(es, c(.5, 5/length(es)))
+            pd <- ecdf(es)
+            a <- list(x=knots(pd), y=pd(knots(pd)))
+            filtro <- a$x<iqr[1] & a$x>=iqr[2] & a$y<1
+            spl <- smooth.spline(a$x[filtro], -log(a$y[filtro]), spar=.75)
+            p <- exp(-predict(spl, x)$y)
+            pos <- which(x>iqr[1])
+            if (x>iqr[1]) p <- pd(x)
+            return(p)
+        }, ss=mobj$signature, nes=mobj$es$nes, regul=mobj$regulon, pos=pos, mc.cores=cores)
+        res <- sapply(res, function(x) x)    
+    }
+    else {
+        if (verbose) pb <- txtProgressBar(max=length(pos), style=3)
+        res <- sapply(1:length(pos), function(i, pos, ss, nes, regul, pb, verbose) {
+            if (verbose) setTxtProgressBar(pb, i)
+            i <- pos[i]
+            pos <- match(unlist(strsplit(names(regul)[i], "--")), names(regul))
+    		tgs <- unique(unlist(lapply(regul[pos], function(x) names(x$tfmode)), use.names=FALSE))
+    		tfmode <- sapply(regul[pos], function(x, tgs) x$tfmode[match(tgs, names(x$tfmode))], tgs=tgs)
+    		rownames(tfmode) <- tgs
+    		tfmode <- t(t(tfmode)*sign(nes[match(names(regul)[pos], names(nes))]))
+    		tfmode[is.na(tfmode)] <- 0
+    		ll <- sapply(regul[pos], function(x, tgs) x$likelihood[match(tgs, names(x$tfmode))], tgs=tgs)
+    		ll[is.na(ll)] <- 0
+    		ll1 <- ll/rowSums(ll)
+    		tfmode <- rowSums(tfmode*ll1)
+    		ll <- apply(ll, 1, max)
+    		tgs <- names(regul[[i]]$tfmode)
+            r2 <- apply(ss, 2, rank)/(nrow(ss)+1)*2-1
+            r1 <- abs(r2)*2-1
+            r1[r1==(-1)] <- 1-(1/length(r1))
+            r1 <- qnorm(r1/2+.5)
+            r2 <- qnorm(r2/2+.5)
+            dim(r1) <- dim(r2) <- dim(ss)
+    		rownames(r1) <- rownames(r2) <- rownames(ss)
+            pos <- match(names(tfmode), rownames(r1))
+            r1 <- filterRowMatrix(r1, pos)
+            r2 <- filterRowMatrix(r2, pos)
+    		dnull <- sapply(1:per, function(i, ll, samp) {
+    			ll[sample(length(ll), samp)] <- 0
+    			return(ll)
+    		}, ll=ll, samp=length(tgs))
+    		dnull <- cbind(ll, dnull)
+    		dnull[match(tgs, names(tfmode)), 1] <- 0
+    		dnull <- t(t(dnull)/colSums(dnull))		
+    		sum1 <- t(r2) %*% (dnull*tfmode)
+            sum2 <- t(r1) %*% (dnull * (1-abs(tfmode)))
+            es <- colMeans(abs(sum1)+sum2*(sum2>0))
+    		x <- es[1]
+    		es <- es[-1]
+            iqr <- quantile(es, c(.5, 5/length(es)))
+            pd <- ecdf(es)
+            a <- list(x=knots(pd), y=pd(knots(pd)))
+            filtro <- a$x<iqr[1] & a$x>=iqr[2] & a$y<1
+            spl <- smooth.spline(a$x[filtro], -log(a$y[filtro]), spar=.75)
+            p <- exp(-predict(spl, x)$y)
+            pos <- which(x>iqr[1])
+            if (x>iqr[1]) p <- pd(x)
+            return(p)
+    	}, ss=mobj$signature, nes=mobj$es$nes, regul=mobj$regulon, pos=pos, pb=pb, verbose=verbose)
+    }
     if (verbose) message("\nProcess ended at ", date())
 	names(res) <- names(mobj$regulon)[pos]
 	mobj$es$synergy <- res
@@ -266,16 +338,30 @@ msviperSynergy <- function(mobj, per=1000, seed=1, verbose=TRUE) {
 }
 
 
-comregulationAnalysis <- function(tfs, ges, regulon, nullmodel=NULL, ones, resp, minsize=5, adaptive.size=FALSE, verbose=TRUE) {
-    reg1 <- apply(tfs, 2, function(x, regulon, res1) {
-        pos <- which(names(regulon) %in% x)
-        tgs <- table(unlist(lapply(regulon[pos], function(x) names(x$tfmode)), use.names=FALSE))
-        tgs <- names(tgs)[tgs==length(x)]
-        if (length(tgs)<2) return(list(tfmode=NULL, likelihood=NULL))
-        tfmode <- t(t(sapply(regulon[pos], function(x, tgs) x$tfmode[match(tgs, names(x$tfmode))], tgs=tgs))*sign(res1[pos]))
-        likelihood <- apply(sapply(regulon[pos], function(x, tgs) x$likelihood[match(tgs, names(x$tfmode))], tgs=tgs), 1, prod)
-        list(tfmode=rowMeans(tfmode, na.rm=TRUE), likelihood=likelihood)
-    }, regulon=regulon, res1=ones)
+comregulationAnalysis <- function(tfs, ges, regulon, nullmodel=NULL, ones, resp, minsize=5, adaptive.size=FALSE, cores=1, verbose=TRUE) {
+    if (cores>1) {
+        reg1 <- mclapply(1:ncol(tfs), function(i, tfs, regulon, res1) {
+            x <- tfs[, i]
+            pos <- which(names(regulon) %in% x)
+            tgs <- table(unlist(lapply(regulon[pos], function(x) names(x$tfmode)), use.names=FALSE))
+            tgs <- names(tgs)[tgs==length(x)]
+            if (length(tgs)<2) return(list(tfmode=NULL, likelihood=NULL))
+            tfmode <- t(t(sapply(regulon[pos], function(x, tgs) x$tfmode[match(tgs, names(x$tfmode))], tgs=tgs))*sign(res1[pos]))
+            likelihood <- apply(sapply(regulon[pos], function(x, tgs) x$likelihood[match(tgs, names(x$tfmode))], tgs=tgs), 1, prod)
+            list(tfmode=rowMeans(tfmode, na.rm=TRUE), likelihood=likelihood)
+        }, tfs=tfs, regulon=regulon, res1=ones, mc.cores=cores)
+    }
+    else {
+        reg1 <- apply(tfs, 2, function(x, regulon, res1) {
+            pos <- which(names(regulon) %in% x)
+            tgs <- table(unlist(lapply(regulon[pos], function(x) names(x$tfmode)), use.names=FALSE))
+            tgs <- names(tgs)[tgs==length(x)]
+            if (length(tgs)<2) return(list(tfmode=NULL, likelihood=NULL))
+            tfmode <- t(t(sapply(regulon[pos], function(x, tgs) x$tfmode[match(tgs, names(x$tfmode))], tgs=tgs))*sign(res1[pos]))
+            likelihood <- apply(sapply(regulon[pos], function(x, tgs) x$likelihood[match(tgs, names(x$tfmode))], tgs=tgs), 1, prod)
+            list(tfmode=rowMeans(tfmode, na.rm=TRUE), likelihood=likelihood)
+        }, regulon=regulon, res1=ones)
+    }
     names(reg1) <- apply(tfs, 2, paste, collapse="--")
     reg1 <- reg1[sapply(reg1, function(x) length(x$tfmode))>0]
     if (adaptive.size) {
@@ -286,8 +372,8 @@ comregulationAnalysis <- function(tfs, ges, regulon, nullmodel=NULL, ones, resp,
     else reg1 <- reg1[sapply(reg1, function(x) length(x$tfmode))>=minsize]
     if (length(reg1)==0) return(list())
     if (is.null(nullmodel)) nullf <- ppwea3NULLf(reg1)
-    else nullf <- pwea3NULLf(pwea3NULLgroups(nullmodel, reg1, verbose=verbose), verbose=verbose)
-    res1 <- groupPwea3(ges, reg1, nullf, minsize=1, verbose=verbose)
+    else nullf <- pwea3NULLf(pwea3NULLgroups(nullmodel, reg1, cores=cores, verbose=verbose), cores=cores, verbose=verbose)
+    res1 <- groupPwea3(ges, reg1, nullf, minsize=1, cores=cores, verbose=verbose)
     filtro <- sapply(strsplit(names(res1$p.value), "--"), function(x, res1, res) {
         test <- res[sapply(strsplit(names(res), "--"), function(x1, x) all(x1 %in% x), x=x)]
         if (length(test)>0) return(all(test > res1[paste(x, collapse="--")]))

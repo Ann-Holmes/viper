@@ -13,6 +13,7 @@
 #' @param adaptive.size Logical, whether the weighting scores should be taken into account for computing the regulon size
 #' @param eset.filter Logical, whether the dataset should be limited only to the genes represented in the interactome
 #' @param pleiotropyArgs list of 5 numbers for the pleotropy correction indicating: regulators p-value threshold, pleiotropic interaction p-value threshold, minimum number of targets in the overlap between pleiotropic regulators, penalty for the pleiotropic interactions and the method for computing the pleiotropy, either absolute or adaptive
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @return A matrix of inferred activity for each regulator gene in the network across all samples
 #' @seealso \code{\link{msviper}}
@@ -27,7 +28,7 @@
 #' res[1:5, 1:5]
 #' @export
 
-viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=c("scale", "rank", "mad", "ttest", "none"), bootstraps=0, minsize=25, adaptive.size=FALSE, eset.filter=TRUE, pleiotropyArgs=list(regulators=.05, shadow=.05, targets=10, penalty=20, method="adaptive"), verbose=TRUE) {
+viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=c("scale", "rank", "mad", "ttest", "none"), bootstraps=0, minsize=25, adaptive.size=FALSE, eset.filter=TRUE, pleiotropyArgs=list(regulators=.05, shadow=.05, targets=10, penalty=20, method="adaptive"), cores=1, verbose=TRUE) {
     method <- match.arg(method)
     pdata <- NULL
     if (is(eset, "viperSignature")) {
@@ -47,7 +48,7 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
         pdata <- phenoData(eset)
         eset <- exprs(eset)
     } else if (is.data.frame(eset)) {
-        eset<-as.matrix(eset)
+        eset <- as.matrix(eset)
     }
     if (is.null(nrow(eset))) eset <- matrix(eset, length(eset), 1, dimnames=list(names(eset), NULL))
     if (eset.filter) {
@@ -66,7 +67,7 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
     })>=minsize]
     else regulon <- regulon[sapply(regulon, function(x) length(x$tfmode))>=minsize]
     if (bootstraps>0) {
-        return(bootstrapViper(eset=eset, regulon=regulon, nes=nes, bootstraps=bootstraps, verbose=verbose))
+        return(bootstrapViper(eset=eset, regulon=regulon, nes=nes, bootstraps=bootstraps, cores=cores, verbose=verbose))
     }
     switch(method,
 		scale={tt <- t(scale(t(eset)))},
@@ -80,7 +81,7 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
 		none={tt <- eset}
 	)
     if (verbose) message("Computing regulons enrichment with aREA")
-    es <- aREA(tt, regulon, verbose=verbose)
+    es <- aREA(tt, regulon, cores=cores, verbose=verbose)
     if (!nes) {
         if (pleiotropy) warning("No pleiotropy correction implemented when raw es is returned.", call.=FALSE)
         return(es$es)
@@ -88,7 +89,7 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
     if (is.null(dnull)) nes <- es$nes
     else {
         if (verbose) message("\nEstimating NES with null model")
-        tmp <- aREA(dnull, regulon, verbose=verbose)$es
+        tmp <- aREA(dnull, regulon, cores=cores, verbose=verbose)$es
         nes <- t(sapply(1:nrow(tmp), function(i, tmp, es) {
             aecdf1(tmp[i, ], symmetric=TRUE, es[i, ])$nes
         }, tmp=tmp, es=es$es))
@@ -99,22 +100,40 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
         if (verbose) {
             message("\nComputing pleiotropy for ", ncol(nes), " samples.")
             message("\nProcess started at ", date())
-            pb <- txtProgressBar(max=ncol(nes), style=3)
         }
-        nes <- sapply(1:ncol(nes), function(i, ss, nes, regulon, args, dnull, pb) {
-            nes <- nes[, i]
-            sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
-            if (!is.null(sreg)) {
-                if (is.null(dnull)) tmp <-aREA(ss[, i], sreg)$nes[, 1]
-                else {
-                    tmp <- aREA(cbind(ss[, i], dnull), sreg)$es
-                    tmp <- apply(tmp, 1, function(x) aecdf1(x[-1], symmetric=TRUE, x[1])$nes)
+        if (cores>1) {
+            nes <- mclapply(1:ncol(nes), function(i, ss, nes, regulon, args, dnull) {
+                nes <- nes[, i]
+                sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
+                if (!is.null(sreg)) {
+                    if (is.null(dnull)) tmp <-aREA(ss[, i], sreg, cores=1)$nes[, 1]
+                    else {
+                        tmp <- aREA(cbind(ss[, i], dnull), sreg, cores=1)$es
+                        tmp <- apply(tmp, 1, function(x) aecdf1(x[-1], symmetric=TRUE, x[1])$nes)
+                    }
+                    nes[match(names(tmp), names(nes))] <- tmp
                 }
-                nes[match(names(tmp), names(nes))] <- tmp
-            }
-            if (is(pb, "txtProgressBar")) setTxtProgressBar(pb, i)    
-            return(nes)
-        }, ss=tt, nes=nes, regulon=regulon, args=pleiotropyArgs, dnull=dnull, pb=pb)
+                return(nes)
+            }, ss=tt, nes=nes, regulon=regulon, args=pleiotropyArgs, dnull=dnull, mc.cores=cores)
+            nes <- sapply(nes, function(x) x)    
+        }
+        else {
+            if (verbose) pb <- txtProgressBar(max=ncol(nes), style=3)
+            nes <- sapply(1:ncol(nes), function(i, ss, nes, regulon, args, dnull, pb) {
+                nes <- nes[, i]
+                sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
+                if (!is.null(sreg)) {
+                    if (is.null(dnull)) tmp <-aREA(ss[, i], sreg)$nes[, 1]
+                    else {
+                        tmp <- aREA(cbind(ss[, i], dnull), sreg)$es
+                        tmp <- apply(tmp, 1, function(x) aecdf1(x[-1], symmetric=TRUE, x[1])$nes)
+                    }
+                    nes[match(names(tmp), names(nes))] <- tmp
+                }
+                if (is(pb, "txtProgressBar")) setTxtProgressBar(pb, i)    
+                return(nes)
+            }, ss=tt, nes=nes, regulon=regulon, args=pleiotropyArgs, dnull=dnull, pb=pb)
+        }
         if (verbose) message("\nProcess ended at ", date(), "\n")
         if (is.null(nrow(nes))) nes <- matrix(nes, length(nes), 1, dimnames=list(names(nes), NULL))
         colnames(nes) <- colnames(eset)
@@ -141,6 +160,7 @@ setGeneric("viperSignature", function(eset, ...) standardGeneric("viperSignature
 #' @param method Character string indicating how to compute the signature and null model, either ttest, zscore or mean
 #' @param per Integer indicating the number of sample permutations
 #' @param seed Integer indicating the seed for the random sample generation. The system default is used when set to zero
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @examples
 #' data(bcellViper, package="bcellViper")
@@ -153,10 +173,10 @@ setGeneric("viperSignature", function(eset, ...) standardGeneric("viperSignature
 #' res[1:5, 1:5]
 #' @rdname viperSignature-methods
 #' @aliases viperSignature,ExpressionSet-method
-setMethod("viperSignature", "ExpressionSet", function(eset, pheno, refgroup, method=c("ttest", "zscore", "mean"), per=1000, seed=1, verbose=TRUE) {
+setMethod("viperSignature", "ExpressionSet", function(eset, pheno, refgroup, method=c("ttest", "zscore", "mean"), per=1000, seed=1, cores=1, verbose=TRUE) {
     method <- match.arg(method)
     pos <- pData(eset)[[pheno]] %in% refgroup
-    tmp <- viperSignature(exprs(eset)[, !pos], exprs(eset)[, pos], method=method, per=per, seed=seed, verbose=verbose)
+    tmp <- viperSignature(exprs(eset)[, !pos], exprs(eset)[, pos], method=method, per=per, seed=seed, cores=cores, verbose=verbose)
     pdata <- phenoData(eset)
     pData(pdata) <- pData(pdata)[match(colnames(tmp$signature), rownames(pData(pdata))), ]
     tmp$signature <- ExpressionSet(assayData=tmp$signature, phenoData=pdata)
@@ -176,7 +196,7 @@ setMethod("viperSignature", "ExpressionSet", function(eset, pheno, refgroup, met
 #' res[1:5, 1:5]
 #' @rdname viperSignature-methods
 #' @aliases viperSignature,matrix-method
-setMethod("viperSignature", "matrix", function(eset, ref, method=c("ttest", "zscore", "mean"), per=1000, seed=1, verbose=TRUE) {
+setMethod("viperSignature", "matrix", function(eset, ref, method=c("ttest", "zscore", "mean"), per=1000, seed=1, cores=1, verbose=TRUE) {
     method <- match.arg(method)
     if (seed>0) set.seed(ceiling(seed))
     switch(method,
@@ -211,28 +231,53 @@ setMethod("viperSignature", "matrix", function(eset, ref, method=c("ttest", "zsc
             per1 <- sapply(1:(min(per, nco)), function(i, n1, n2) sample(n1, n2), n1=ncol(ref), n2=round(ncol(ref)/2))
         }
         pb <- NULL
-        if (verbose) pb <- txtProgressBar(max=ncol(per1), style=3)
-        vpnull <- sapply(1:ncol(per1), function(i, dset, ref, pb, size, verbose, method, per1) {
-            if (verbose) setTxtProgressBar(pb, i)
-            switch(method,
-            ttest={
-                tmp <- NA
-                while(any(is.na(tmp))) {
-                    pos <- sample(ncol(dset), size)
-                    tmp <- rowTtest(dset[, pos[1]]-dset[, pos[-1]])
-                    tmp <- (qnorm(tmp$p.value/2, lower.tail=FALSE)*sign(tmp$statistic))[, 1]
-                }
-            },
-            zscore={
-                pos <- per1[, i]
-                tmp <- (rowMeans(ref[, pos])-rowMeans(ref[, -pos]))/(sqrt(frvarna(ref[, pos])[, 1])+sqrt(frvarna(ref[, -pos])[, 1]))
-            },
-            mean={
-                pos <- per1[, i]
-                tmp <- rowMeans(ref[, pos])-rowMeans(ref[, -pos])
-            })
-            return(tmp)
-        }, dset=cbind(eset, ref), ref=ref, size=ncol(ref)+1, pb=pb, verbose=verbose, method=method, per1=per1)
+        if (cores>1) {
+            vpnull <- mclapply(1:ncol(per1), function(i, dset, ref, size, method, per1) {
+                switch(method,
+                       ttest={
+                           tmp <- NA
+                           while(any(is.na(tmp))) {
+                               pos <- sample(ncol(dset), size)
+                               tmp <- rowTtest(dset[, pos[1]]-dset[, pos[-1]])
+                               tmp <- (qnorm(tmp$p.value/2, lower.tail=FALSE)*sign(tmp$statistic))[, 1]
+                           }
+                       },
+                       zscore={
+                           pos <- per1[, i]
+                           tmp <- (rowMeans(ref[, pos])-rowMeans(ref[, -pos]))/(sqrt(frvarna(ref[, pos])[, 1])+sqrt(frvarna(ref[, -pos])[, 1]))
+                       },
+                       mean={
+                           pos <- per1[, i]
+                           tmp <- rowMeans(ref[, pos])-rowMeans(ref[, -pos])
+                       })
+                return(tmp)
+            }, dset=cbind(eset, ref), ref=ref, size=ncol(ref)+1, method=method, per1=per1, mc.cores=cores)
+            vpnull <- sapply(vpnull, function(x) x)    
+        }
+        else {
+            if (verbose) pb <- txtProgressBar(max=ncol(per1), style=3)
+            vpnull <- sapply(1:ncol(per1), function(i, dset, ref, pb, size, verbose, method, per1) {
+                if (verbose) setTxtProgressBar(pb, i)
+                switch(method,
+                ttest={
+                    tmp <- NA
+                    while(any(is.na(tmp))) {
+                        pos <- sample(ncol(dset), size)
+                        tmp <- rowTtest(dset[, pos[1]]-dset[, pos[-1]])
+                        tmp <- (qnorm(tmp$p.value/2, lower.tail=FALSE)*sign(tmp$statistic))[, 1]
+                    }
+                },
+                zscore={
+                    pos <- per1[, i]
+                    tmp <- (rowMeans(ref[, pos])-rowMeans(ref[, -pos]))/(sqrt(frvarna(ref[, pos])[, 1])+sqrt(frvarna(ref[, -pos])[, 1]))
+                },
+                mean={
+                    pos <- per1[, i]
+                    tmp <- rowMeans(ref[, pos])-rowMeans(ref[, -pos])
+                })
+                return(tmp)
+            }, dset=cbind(eset, ref), ref=ref, size=ncol(ref)+1, pb=pb, verbose=verbose, method=method, per1=per1)
+        }
         rownames(vpnull) <- rownames(eset)
     }
     tmp <- list(signature=vpsig, nullmodel=vpnull)
@@ -248,6 +293,7 @@ setMethod("viperSignature", "matrix", function(eset, ref, method=c("ttest", "zsc
 #' @param regulon Object of class regulon
 #' @param nes Logical, whether the enrichment score reported should be normalized
 #' @param bootstraps Integer indicating the number of bootstraps iterations to perform. Only the scale method is implemented with bootstraps.
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @return A list containing a matrix of inferred activity for each regulator gene in the network across all samples and the corresponding standard deviation computed from the bootstrap iterations.
 #' @seealso \code{\link{viper}}
@@ -261,7 +307,7 @@ setMethod("viperSignature", "matrix", function(eset, ref, method=c("ttest", "zsc
 #' dim(res$nes)
 #' res$nes[1:5, 1:5]
 #' res$sd[1:5, 1:5]
-bootstrapViper <- function(eset, regulon, nes=TRUE, bootstraps=10, verbose=TRUE) {
+bootstrapViper <- function(eset, regulon, nes=TRUE, bootstraps=10, cores=1, verbose=TRUE) {
     targets <- unique(unlist(lapply(regulon, function(x) names(x$tfmode)), use.names=FALSE))
     mor <- sapply(regulon, function(x, genes) {
         return(x$tfmode[match(genes, names(x$tfmode))])
@@ -287,23 +333,41 @@ bootstrapViper <- function(eset, regulon, nes=TRUE, bootstraps=10, verbose=TRUE)
     if (verbose) {
         message("\nComputing the parameters for ", bootstraps, " bootstraps.")
         message("Process started at ", date())
-        pb <- txtProgressBar(max=ncol(eset), style=3)
     }
-    res <- lapply(1:ncol(eset), function(i, eset, btmean, btsd, mor, wts, pb) {
-        tt <- (eset[, i]-btmean)/btsd
-        tt <- apply(tt, 2, function(x) rank(x))/(nrow(tt)+1)
-        t1 <- abs(tt-.5)*2
-        t1 <- t1+(1-max(t1))/2
-        t1 <- qnorm(t1)
-        t2 <- qnorm(tt)
-        sum1 <- t(mor * wts) %*% t2
-        sum2 <- t((1-abs(mor)) * wts) %*% t1
-        ss <- sign(sum1)
-        ss[ss==0] <- 1
-        tmp <- (abs(sum1) + sum2*(sum2>0))*ss
-        if (is(pb, "txtProgressBar")) setTxtProgressBar(pb, i)    
-        return(list(mean=rowMeans(tmp), sd=sqrt(frvarna(tmp)[, 1])))
-    }, eset=eset, btmean=btmean, btsd=btsd, mor=mor, wts=wts, pb=pb)
+    if (cores>1) {
+        res <- mclapply(1:ncol(eset), function(i, eset, btmean, btsd, mor, wts) {
+            tt <- (eset[, i]-btmean)/btsd
+            tt <- apply(tt, 2, function(x) rank(x))/(nrow(tt)+1)
+            t1 <- abs(tt-.5)*2
+            t1 <- t1+(1-max(t1))/2
+            t1 <- qnorm(t1)
+            t2 <- qnorm(tt)
+            sum1 <- t(mor * wts) %*% t2
+            sum2 <- t((1-abs(mor)) * wts) %*% t1
+            ss <- sign(sum1)
+            ss[ss==0] <- 1
+            tmp <- (abs(sum1) + sum2*(sum2>0))*ss
+            return(list(mean=rowMeans(tmp), sd=sqrt(frvarna(tmp)[, 1])))
+        }, eset=eset, btmean=btmean, btsd=btsd, mor=mor, wts=wts, mc.cores=cores)
+    }
+    else {
+        if (verbose) pb <- txtProgressBar(max=ncol(eset), style=3)
+        res <- lapply(1:ncol(eset), function(i, eset, btmean, btsd, mor, wts, pb) {
+            tt <- (eset[, i]-btmean)/btsd
+            tt <- apply(tt, 2, function(x) rank(x))/(nrow(tt)+1)
+            t1 <- abs(tt-.5)*2
+            t1 <- t1+(1-max(t1))/2
+            t1 <- qnorm(t1)
+            t2 <- qnorm(tt)
+            sum1 <- t(mor * wts) %*% t2
+            sum2 <- t((1-abs(mor)) * wts) %*% t1
+            ss <- sign(sum1)
+            ss[ss==0] <- 1
+            tmp <- (abs(sum1) + sum2*(sum2>0))*ss
+            if (is(pb, "txtProgressBar")) setTxtProgressBar(pb, i)    
+            return(list(mean=rowMeans(tmp), sd=sqrt(frvarna(tmp)[, 1])))
+        }, eset=eset, btmean=btmean, btsd=btsd, mor=mor, wts=wts, pb=pb)
+    }
     names(res) <- colnames(eset)
     if (verbose) message("\nProcess ended at ", date())
     return(list(nes=sapply(res, function(x) x$mean)*nes, sd=sapply(res, function(x) x$sd)*nes))
@@ -316,11 +380,12 @@ bootstrapViper <- function(eset, regulon, nes=TRUE, bootstraps=10, verbose=TRUE)
 #' @param eset Matrix containing a set of signatures, with samples in columns and traits in rows
 #' @param regulon Regulon object
 #' @param method Character string indicating the implementation, either auto, matrix or loop
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether a progress bar should be shown
 #' @return List of two elements, enrichment score and normalized enrichment score
 #' @export
 
-aREA <- function(eset, regulon, method=c("auto", "matrix", "loop"), verbose=FALSE) {
+aREA <- function(eset, regulon, method=c("auto", "matrix", "loop"), cores=1, verbose=FALSE) {
     method <- match.arg(method)
     if (is.null(ncol(eset))) eset <- matrix(eset, length(eset), 1, dimnames=list(names(eset), NULL))
     regulon <- lapply(regulon, function(x, genes) {
@@ -366,19 +431,33 @@ aREA <- function(eset, regulon, method=c("auto", "matrix", "loop"), verbose=FALS
         t1 <- qnorm(t1)
         t2 <- qnorm(t2)
         pb <- NULL
-        if (verbose) {
-            pb <- txtProgressBar(max=length(regulon), style=3)
+        if (cores>1) {
+            temp <- mclapply(1:length(regulon), function(i, regulon, t1, t2) {
+                x <- regulon[[i]]
+                pos <- match(names(x$tfmode), rownames(t1))
+                sum1 <- matrix(x$tfmode * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t2, pos)
+                ss <- sign(sum1)
+                ss[ss==0] <- 1
+                sum2 <- matrix((1-abs(x$tfmode)) * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t1, pos)
+                return(as.vector(abs(sum1) + sum2*(sum2>0)) / sum(x$likelihood) * ss)
+            }, regulon=regulon, t1=t1, t2=t2, mc.cores=cores)
+            temp <- sapply(temp, function(x) x)    
         }
-        temp <- sapply(1:length(regulon), function(i, regulon, t1, t2, pb) {
-            x <- regulon[[i]]
-            pos <- match(names(x$tfmode), rownames(t1))
-            sum1 <- matrix(x$tfmode * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t2, pos)
-            ss <- sign(sum1)
-            ss[ss==0] <- 1
-            sum2 <- matrix((1-abs(x$tfmode)) * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t1, pos)
-            if (is(pb, "txtProgressBar")) setTxtProgressBar(pb, i)
-            return(as.vector(abs(sum1) + sum2*(sum2>0)) / sum(x$likelihood) * ss)
-        }, regulon=regulon, t1=t1, t2=t2, pb=pb)
+        else {
+            if (verbose) {
+                pb <- txtProgressBar(max=length(regulon), style=3)
+            }
+            temp <- sapply(1:length(regulon), function(i, regulon, t1, t2, pb) {
+                x <- regulon[[i]]
+                pos <- match(names(x$tfmode), rownames(t1))
+                sum1 <- matrix(x$tfmode * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t2, pos)
+                ss <- sign(sum1)
+                ss[ss==0] <- 1
+                sum2 <- matrix((1-abs(x$tfmode)) * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t1, pos)
+                if (is(pb, "txtProgressBar")) setTxtProgressBar(pb, i)
+                return(as.vector(abs(sum1) + sum2*(sum2>0)) / sum(x$likelihood) * ss)
+            }, regulon=regulon, t1=t1, t2=t2, pb=pb)
+        }
         if (is.null(ncol(temp))) temp <- matrix(temp, 1, length(temp))
         colnames(temp) <- names(regulon)
         rownames(temp) <- colnames(eset)

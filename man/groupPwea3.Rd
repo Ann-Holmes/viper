@@ -5,7 +5,7 @@
 \title{Proportionally Weighted Enrichment Analysis for gene-set groups}
 \usage{
 groupPwea3(rlist, groups, nullpw = NULL, alternative = c("two.sided",
-  "less", "greater"), per = 0, minsize = 5, verbose = TRUE)
+  "less", "greater"), per = 0, minsize = 5, cores = 1, verbose = TRUE)
 }
 \arguments{
 \item{rlist}{Named vector containing the scores to rank the expression profile or matrix where columns contains bootstraped signatures}
@@ -19,6 +19,8 @@ groupPwea3(rlist, groups, nullpw = NULL, alternative = c("two.sided",
 \item{per}{Integer indicating the number of permutations for the genes in case "nullpw" is ommited}
 
 \item{minsize}{Integer indicating the minimum size for the regulons}
+
+\item{cores}{Integer indicating the number of cores to use (only 1 in Windows-based systems)}
 
 \item{verbose}{Logical, whether progression messages should be printed in the terminal}
 }

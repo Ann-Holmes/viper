@@ -4,7 +4,8 @@
 \alias{bootstrapViper}
 \title{bootstrapsViper}
 \usage{
-bootstrapViper(eset, regulon, nes = TRUE, bootstraps = 10, verbose = TRUE)
+bootstrapViper(eset, regulon, nes = TRUE, bootstraps = 10, cores = 1,
+  verbose = TRUE)
 }
 \arguments{
 \item{eset}{ExpressionSet object or Numeric matrix containing the expression data, with samples in columns and genes in rows}
@@ -14,6 +15,8 @@ bootstrapViper(eset, regulon, nes = TRUE, bootstraps = 10, verbose = TRUE)
 \item{nes}{Logical, whether the enrichment score reported should be normalized}
 
 \item{bootstraps}{Integer indicating the number of bootstraps iterations to perform. Only the scale method is implemented with bootstraps.}
+
+\item{cores}{Integer indicating the number of cores to use (only 1 in Windows-based systems)}
 
 \item{verbose}{Logical, whether progression messages should be printed in the terminal}
 }

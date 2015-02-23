@@ -10,7 +10,7 @@
 ttestNull(x, ...)
 
 \S4method{ttestNull}{matrix}(x, y, per = 1000, repos = TRUE, seed = 1,
-  verbose = TRUE)
+  cores = 1, verbose = TRUE)
 
 \S4method{ttestNull}{ExpressionSet}(x, pheno, group1, group2, per = 1000,
   repos = TRUE, seed = 1, verbose = TRUE)
@@ -27,6 +27,8 @@ ttestNull(x, ...)
 \item{repos}{Logical, whether the permutations should be performed with reposition}
 
 \item{seed}{Integer indicating the seed for the permutations, 0 for disable it}
+
+\item{cores}{Integer indicating the number of cores to use (set to 1 in windows systems)}
 
 \item{verbose}{Logical, whether progression messages should be printed in the terminal}
 

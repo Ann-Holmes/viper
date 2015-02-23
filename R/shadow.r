@@ -12,6 +12,7 @@
 #' @param adaptive.size Logical, whether the target weight should be considered when computing the regulon size
 #' @param iterative Logical, whether a two step analysis with adaptive redundancy estimation should be performed
 #' @param seed Integer indicating the seed for the permutations, 0 for disable it
+#' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @return An updated msviper object with an additional slot (shadow) containing the shadow pairs
 #' @seealso \code{\link{msviper}}
@@ -24,7 +25,7 @@
 #' summary(mra)
 #' @export
 
-shadow <- function(mobj, regulators=.01, targets=10, shadow=.01, per=1000, nullmodel=NULL, minsize=NULL, adaptive.size=NULL, iterative=NULL, seed=1, verbose=TRUE) {
+shadow <- function(mobj, regulators=.01, targets=10, shadow=.01, per=1000, nullmodel=NULL, minsize=NULL, adaptive.size=NULL, iterative=NULL, seed=1, cores=1, verbose=TRUE) {
     if (seed>0) set.seed(round(seed))
     if (is.null(minsize)) minsize <- mobj$param$minsize
     if (is.null(adaptive.size)) adaptive.size <- mobj$param$adaptive.size
@@ -53,38 +54,72 @@ shadow <- function(mobj, regulators=.01, targets=10, shadow=.01, per=1000, nullm
     if (verbose) {
         message("\nPerforming shadow analysis on ", nrow(regind), " regulon pairs by permutation testing.")
         message("Process started at ", date())
-        pb <- txtProgressBar(max=nrow(regind), style=3)
     }
-    res <- sapply(1:nrow(regind), function(i, regind, ss1, ss2, regul1, per, pb, verbose) {
-        x <- regind[i, ]
-        if (verbose) setTxtProgressBar(pb, i)
-        tfm <- regul1[[x[2]]]$tfmode
-        if (all(names(tfm) %in% names(regul1[[x[1]]]$tfmode))) return(1)
-        ll <- regul1[[x[2]]]$likelihood
-        pos <- match(names(tfm), rownames(ss1))
-        ss1 <- filterRowMatrix(ss1, pos)
-        ss2 <- filterRowMatrix(ss2, pos)
-        dnull <- sapply(1:per, function(i, ll, samp) {
-            ll[sample(length(ll), samp)] <- 0
-            return(ll)
-        }, ll=ll, samp=length(which(names(tfm) %in% names(regul1[[x[1]]]$tfmode))))
-        dnull <- cbind(ll, dnull)
-        dnull[names(tfm) %in% names(regul1[[x[1]]]$tfmode), 1] <- 0
-        dnull <- t(t(dnull)/colSums(dnull))
-        sum1 <- t(ss2) %*% (dnull*tfm)
-        es <- colMeans(abs(sum1)+(t(ss1) %*% (dnull * (1-abs(tfm)))))
-        x1 <- es[1]
-        es <- es[-1]
-        iqr <- quantile(es, c(.5, 5/length(es)))
-        pd <- ecdf(es)
-        a <- list(x=knots(pd), y=pd(knots(pd)))
-        filtro <- a$x<iqr[1] & a$x>=iqr[2] & a$y<1
-        spl <- smooth.spline(a$x[filtro], -log(a$y[filtro]), spar=.75)
-        p <- exp(-predict(spl, x1)$y)
-        pos <- which(x1>iqr[1])
-        if (x1>iqr[1]) p <- pd(x1)
-        return(p)
-    }, regind=regind, ss1=ss1, ss2=ss2, regul1=mobj$regulon[which(names(mobj$regulon) %in% unique(unlist(regind)))], per=per, pb=pb, verbose=verbose)
+    if (cores>1) {
+        res <- mclapply(1:nrow(regind), function(i, regind, ss1, ss2, regul1, per) {
+            x <- regind[i, ]
+            tfm <- regul1[[x[2]]]$tfmode
+            if (all(names(tfm) %in% names(regul1[[x[1]]]$tfmode))) return(1)
+            ll <- regul1[[x[2]]]$likelihood
+            pos <- match(names(tfm), rownames(ss1))
+            ss1 <- filterRowMatrix(ss1, pos)
+            ss2 <- filterRowMatrix(ss2, pos)
+            dnull <- sapply(1:per, function(i, ll, samp) {
+                ll[sample(length(ll), samp)] <- 0
+                return(ll)
+            }, ll=ll, samp=length(which(names(tfm) %in% names(regul1[[x[1]]]$tfmode))))
+            dnull <- cbind(ll, dnull)
+            dnull[names(tfm) %in% names(regul1[[x[1]]]$tfmode), 1] <- 0
+            dnull <- t(t(dnull)/colSums(dnull))
+            sum1 <- t(ss2) %*% (dnull*tfm)
+            es <- colMeans(abs(sum1)+(t(ss1) %*% (dnull * (1-abs(tfm)))))
+            x1 <- es[1]
+            es <- es[-1]
+            iqr <- quantile(es, c(.5, 5/length(es)))
+            pd <- ecdf(es)
+            a <- list(x=knots(pd), y=pd(knots(pd)))
+            filtro <- a$x<iqr[1] & a$x>=iqr[2] & a$y<1
+            spl <- smooth.spline(a$x[filtro], -log(a$y[filtro]), spar=.75)
+            p <- exp(-predict(spl, x1)$y)
+            pos <- which(x1>iqr[1])
+            if (x1>iqr[1]) p <- pd(x1)
+            return(p)
+        }, regind=regind, ss1=ss1, ss2=ss2, regul1=mobj$regulon[which(names(mobj$regulon) %in% unique(unlist(regind)))], per=per, mc.cores=cores)
+        res <- sapply(res, function(x) x)    
+    }
+    else {
+        if (verbose) pb <- txtProgressBar(max=nrow(regind), style=3)
+        res <- sapply(1:nrow(regind), function(i, regind, ss1, ss2, regul1, per, pb, verbose) {
+            x <- regind[i, ]
+            if (verbose) setTxtProgressBar(pb, i)
+            tfm <- regul1[[x[2]]]$tfmode
+            if (all(names(tfm) %in% names(regul1[[x[1]]]$tfmode))) return(1)
+            ll <- regul1[[x[2]]]$likelihood
+            pos <- match(names(tfm), rownames(ss1))
+            ss1 <- filterRowMatrix(ss1, pos)
+            ss2 <- filterRowMatrix(ss2, pos)
+            dnull <- sapply(1:per, function(i, ll, samp) {
+                ll[sample(length(ll), samp)] <- 0
+                return(ll)
+            }, ll=ll, samp=length(which(names(tfm) %in% names(regul1[[x[1]]]$tfmode))))
+            dnull <- cbind(ll, dnull)
+            dnull[names(tfm) %in% names(regul1[[x[1]]]$tfmode), 1] <- 0
+            dnull <- t(t(dnull)/colSums(dnull))
+            sum1 <- t(ss2) %*% (dnull*tfm)
+            es <- colMeans(abs(sum1)+(t(ss1) %*% (dnull * (1-abs(tfm)))))
+            x1 <- es[1]
+            es <- es[-1]
+            iqr <- quantile(es, c(.5, 5/length(es)))
+            pd <- ecdf(es)
+            a <- list(x=knots(pd), y=pd(knots(pd)))
+            filtro <- a$x<iqr[1] & a$x>=iqr[2] & a$y<1
+            spl <- smooth.spline(a$x[filtro], -log(a$y[filtro]), spar=.75)
+            p <- exp(-predict(spl, x1)$y)
+            pos <- which(x1>iqr[1])
+            if (x1>iqr[1]) p <- pd(x1)
+            return(p)
+        }, regind=regind, ss1=ss1, ss2=ss2, regul1=mobj$regulon[which(names(mobj$regulon) %in% unique(unlist(regind)))], per=per, pb=pb, verbose=verbose)
+    }
     regind <- filterRowMatrix(regind, res<shadow)
     if (nrow(regind)==0) return(mobj)
     regind <- filterRowMatrix(regind, !(paste(regind[, 1], regind[, 2], sep="-") %in% paste(regind[, 2], regind[, 1], sep="-")))
@@ -103,7 +138,7 @@ shadow <- function(mobj, regulators=.01, targets=10, shadow=.01, per=1000, nullm
         return(x)
     })
     regul1 <- regul1[sapply(regul1, function(x) length(x$tfmode))>0]
-    res <- msviper(ges=mobj$signature, regulon=regul1, nullmodel=nullmodel, pleiotropy=FALSE, minsize=minsize, adaptive.size=adaptive.size, ges.filter=FALSE, synergy=0, verbose=verbose)
+    res <- msviper(ges=mobj$signature, regulon=regul1, nullmodel=nullmodel, pleiotropy=FALSE, minsize=minsize, adaptive.size=adaptive.size, ges.filter=FALSE, synergy=0, cores=cores, verbose=verbose)
     mobj$regulon <- c(res$regulon, mobj$regulon[grep("--", names(mobj$regulon))])
     pos <- grep("--", names(mobj$es$nes))
     mobj$es$es <- c(res$es$es, mobj$es$es[pos])

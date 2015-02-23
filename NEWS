@@ -1,5 +1,9 @@
+new for version 1.2.1
+=====================
+Use of multiple cores based on the parallel package
+
 new for version 1.1.0
-====================
+=====================
 A bug in aracne2regulon function related to collapsing the regulons at the gene level was fixed
 
 A bug in the aecdf function was fixed

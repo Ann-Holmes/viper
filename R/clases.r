@@ -4,6 +4,7 @@
 #' @import methods
 #' @importFrom stats as.dist
 #' @importFrom mixtools normalmixEM
+#' @importFrom parallel mclapply
 NULL
 
 #' The msviper class
