@@ -5,8 +5,6 @@
 #' @importFrom stats as.dist
 #' @importFrom mixtools normalmixEM
 #' @importFrom parallel mclapply
-#' @importFrom e1071 interpolate
-#' @importFrom KernSmooth bkde2D
 NULL
 
 #' The msviper class

@@ -12,8 +12,7 @@ Depends:
 Imports:
     mixtools,
     stats,
-    parallel,
-    e1071
+    parallel
 Suggests:
     bcellViper
 Description: Inference of protein activity from gene expression data, including
