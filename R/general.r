@@ -496,3 +496,44 @@ loadExpset <- function(filename) {
     names(annot) <- rownames(d1)
     return(list(expset=d1, annot=annot))
 }
+
+#' msVIPER class
+#' 
+#' This function generates an instance of the msviper class from a signature, NES signature and regulon object
+#' 
+#' @param nes Numeric vector of NES values
+#' @param signature Numeric vector of gene expression signature
+#' @param regulon Instance of class regulon
+#' @param nullmodel Optional matrix containing the signatures for the null model 
+#' @return msviper class object
+#' @examples
+#' data(bcellViper, package="bcellViper")
+#' sig <- rowTtest(dset, "description", c("CB", "CC"), "N")$statistic
+#' mra <- msviper(sig, regulon)
+#' mra1 <- msviperClass(mra$es$nes, sig, regulon)
+#' summary(mra1)
+#' plot(mra1)
+#' @export
+msviperClass <- function(nes, signature, regulon, nullmodel=NULL) {
+    if (!is.null(ncol(nes))) {
+        warning("nes is a matrix, only the first column will be used", call.=FALSE)
+        nes <- nes[, 1]
+    }
+    if (!is.null(ncol(signature))) {
+        warning("signature is a matrix, only the first column will be used", call.=FALSE)
+        signature <- signature[, 1]
+    }
+    genes <- intersect(names(nes), names(regulon))
+    regulon <- regulon[match(genes, names(regulon))]
+    regulon <- lapply(regulon, function(x, genes) {
+        pos <- which(names(x$tfmode) %in% genes)
+        list(tfmode=x$tfmode[pos], likelihood=x$likelihood[pos])
+    }, genes=names(signature))
+    class(regulon) <- "regulon"
+    nes <- nes[match(genes, names(nes))]
+#    genes <- unique(c(unlist(lapply(regulon, function(x) names(x$tfmode)), use.names=FALSE), names(regulon)))
+#    signature <- signature[names(signature) %in% genes]
+    res <- list(signature=matrix(signature, length(signature), 1, dimnames=list(names(signature), 1)), regulon=regulon, es=list(nes=nes, nes.se=NULL, size=sapply(regul, function(x) length(x$tfmode)), p.value=pnorm(abs(nes), lower.tail=FALSE)*2, nes.bt=matrix(nes, length(nes), 1, dimnames=list(names(nes), 1))), param=list(minsize=25, adaptive.size=FALSE), nullmodel=nullmodel)
+    class(res) <- "msviper"
+    return(res)
+}
