@@ -531,9 +531,7 @@ msviperClass <- function(nes, signature, regulon, nullmodel=NULL) {
     }, genes=names(signature))
     class(regulon) <- "regulon"
     nes <- nes[match(genes, names(nes))]
-#    genes <- unique(c(unlist(lapply(regulon, function(x) names(x$tfmode)), use.names=FALSE), names(regulon)))
-#    signature <- signature[names(signature) %in% genes]
-    res <- list(signature=matrix(signature, length(signature), 1, dimnames=list(names(signature), 1)), regulon=regulon, es=list(nes=nes, nes.se=NULL, size=sapply(regul, function(x) length(x$tfmode)), p.value=pnorm(abs(nes), lower.tail=FALSE)*2, nes.bt=matrix(nes, length(nes), 1, dimnames=list(names(nes), 1))), param=list(minsize=25, adaptive.size=FALSE), nullmodel=nullmodel)
+    res <- list(signature=matrix(signature, length(signature), 1, dimnames=list(names(signature), 1)), regulon=regulon, es=list(nes=nes, nes.se=NULL, size=sapply(regulon, function(x) length(x$tfmode)), p.value=pnorm(abs(nes), lower.tail=FALSE)*2, nes.bt=matrix(nes, length(nes), 1, dimnames=list(names(nes), 1))), param=list(minsize=25, adaptive.size=FALSE), nullmodel=nullmodel)
     class(res) <- "msviper"
     return(res)
 }
