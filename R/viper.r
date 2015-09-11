@@ -402,7 +402,7 @@ aREA <- function(eset, regulon, method=c("auto", "matrix", "loop"), minsize=20, 
     if (method=="auto") {
         method <- "matrix"
         if (length(targets)>1000) method <- "loop"
-        if (!is.na(ws)) method <- "loop"
+        if (!is.na(wm)) method <- "loop"
     }
     switch(method,
     matrix={
@@ -469,7 +469,7 @@ aREA <- function(eset, regulon, method=c("auto", "matrix", "loop"), minsize=20, 
         if (is.null(ncol(temp))) temp <- matrix(temp, 1, length(temp))
         colnames(temp) <- names(regulon)
         rownames(temp) <- colnames(eset)
-        if (length(which(ws<1))>0) {
+        if (length(which(wm<1))>0) {
             w <- sapply(regulon, function(x, ws) {
                 tmp <- x$likelihood*filterRowMatrix(ws, match(names(x$tfmode), rownames(ws)))
               sqrt(colSums(apply(tmp, 2, function(x) x/max(x))^2))
