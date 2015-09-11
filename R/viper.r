@@ -402,7 +402,7 @@ aREA <- function(eset, regulon, method=c("auto", "matrix", "loop"), minsize=20, 
     if (method=="auto") {
         method <- "matrix"
         if (length(targets)>1000) method <- "loop"
-        if (!is.na(wm)) method <- "loop"
+        if (length(wm)>0) method <- "loop"
     }
     switch(method,
     matrix={
