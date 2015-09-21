@@ -1,6 +1,7 @@
 new for version 1.5.3
 =====================
-New implementation of the aREA algorithm allowing for weighting the contribution of each datapoint in the expression matrix
+New implementation of the aREA algorithm allowing for missing values and weighting the contribution
+of each datapoint in the expression matrix and 
 
 new for version 1.5.2
 =====================

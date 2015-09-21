@@ -402,7 +402,7 @@ aREA <- function(eset, regulon, method=c("auto", "matrix", "loop"), minsize=20, 
     if (method=="auto") {
         method <- "matrix"
         if (length(targets)>1000) method <- "loop"
-        if (length(wm)>0) method <- "loop"
+        if (length(wm)>0 | length(which(is.na(eset)))>0) method <- "loop"
     }
     switch(method,
     matrix={
@@ -432,21 +432,24 @@ aREA <- function(eset, regulon, method=c("auto", "matrix", "loop"), minsize=20, 
         tmp <- list(es=tmp, nes=tmp*nes)
     },
     loop={
-        t2 <- apply(eset, 2, rank)/(nrow(eset)+1)
+        t2 <- t(t(apply(eset, 2, rank, na.last="keep"))/(colSums(!is.na(eset))+1))
         t1 <- abs(t2-.5)*2
-        t1 <- t1+(1-max(t1))/2
+        t1 <- t(t(t1)+(1-apply(t1, 2, max, na.rm=TRUE))/2)
         t1 <- qnorm(t1)
         t2 <- qnorm(t2)
         if (is.null(wm)) wm <- matrix(1, nrow(eset), ncol(eset), dimnames=list(rownames(eset), colnames(eset)))
+        wm[is.na(t1)] <- 0
+        t1[is.na(t1)] <- 0
+        t2[is.na(t2)] <- 0
         pb <- NULL
         if (cores>1) {
             temp <- mclapply(1:length(regulon), function(i, regulon, t1, t2, ws) {
                 x <- regulon[[i]]
                 pos <- match(names(x$tfmode), rownames(t1))
-                sum1 <- matrix(x$tfmode * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t2, pos)
+                sum1 <- matrix(x$tfmode * x$likelihood, 1, length(x$tfmode)) %*% (filterRowMatrix(t2, pos) * filterRowMatrix(ws, pos))
                 ss <- sign(sum1)
                 ss[ss==0] <- 1
-                sum2 <- matrix((1-abs(x$tfmode)) * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t1, pos)
+                sum2 <- matrix((1-abs(x$tfmode)) * x$likelihood, 1, length(x$tfmode)) %*% (filterRowMatrix(t1, pos) * filterRowMatrix(ws, pos))
                 return(as.vector(abs(sum1) + sum2*(sum2>0)) / colSums(x$likelihood * filterRowMatrix(ws, pos)) * ss)
             }, regulon=regulon, t1=t1, t2=t2, mc.cores=cores, ws=wm)
             temp <- sapply(temp, function(x) x)    
@@ -458,10 +461,10 @@ aREA <- function(eset, regulon, method=c("auto", "matrix", "loop"), minsize=20, 
             temp <- sapply(1:length(regulon), function(i, regulon, t1, t2, pb, ws) {
                 x <- regulon[[i]]
                 pos <- match(names(x$tfmode), rownames(t1))
-                sum1 <- matrix(x$tfmode * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t2, pos)
+                sum1 <- matrix(x$tfmode * x$likelihood, 1, length(x$tfmode)) %*% (filterRowMatrix(t2, pos) * filterRowMatrix(ws, pos))
                 ss <- sign(sum1)
                 ss[ss==0] <- 1
-                sum2 <- matrix((1-abs(x$tfmode)) * x$likelihood, 1, length(x$tfmode)) %*% filterRowMatrix(t1, pos)
+                sum2 <- matrix((1-abs(x$tfmode)) * x$likelihood, 1, length(x$tfmode)) %*% (filterRowMatrix(t1, pos) * filterRowMatrix(ws, pos))
                 if (is(pb, "txtProgressBar")) setTxtProgressBar(pb, i)
                 return(as.vector(abs(sum1) + sum2*(sum2>0)) / colSums(x$likelihood * filterRowMatrix(ws, pos)) * ss)
             }, regulon=regulon, t1=t1, t2=t2, pb=pb, ws=wm)
