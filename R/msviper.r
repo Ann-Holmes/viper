@@ -148,6 +148,7 @@ bootstrapmsviper <- function(mobj, method=c("mean", "median", "mode")) {
 #' @param adaptive.size Logical, whether the weight (likelihood) should be used for computing the size, taken from \code{mobj} by default
 #' @param level Integer, maximum level of combinatorial regulation
 #' @param cores Integer indicating the number of cores to use (only 1 in Windows-based systems)
+#' @param processAll Logical, whether all pairs, even if not significant, should be processed for synergy
 #' @param verbose Logical, whether progression messages should be printed in the terminal
 #' @return A msviper object
 #' @seealso \code{\link{msviper}}
@@ -159,7 +160,7 @@ bootstrapmsviper <- function(mobj, method=c("mean", "median", "mode")) {
 #' mra <- msviperCombinatorial(mra, 50)
 #' plot(mra, cex=.7)
 #' @export
-msviperCombinatorial <- function(mobj, regulators=100, nullmodel=NULL, minsize=NULL, adaptive.size=NULL, level=10, cores=1, verbose=TRUE) {
+msviperCombinatorial <- function(mobj, regulators=100, nullmodel=NULL, minsize=NULL, adaptive.size=NULL, level=10, cores=1, processAll=FALSE, verbose=TRUE) {
     synergy <- regulators
     if (is.null(minsize)) minsize <- mobj$param$minsize
 	if (is.null(adaptive.size)) adaptive.size <- mobj$param$adaptive.size
@@ -179,7 +180,7 @@ msviperCombinatorial <- function(mobj, regulators=100, nullmodel=NULL, minsize=N
 	n=2
 	while(length(tfs)>n & n<=level) {
 		if (verbose) message("\n-------------------------------------------\nComputing synergy for combination of ", n, " TFs\n-------------------------------------------\n\n")
-		res1 <- comregulationAnalysis(combn(tfs, n), mobj$signature, regulon, nullmodel, resp, res1$es$p.value, minsize, adaptive.size, cores=cores, verbose=verbose)
+		res1 <- comregulationAnalysis(combn(tfs, n), mobj$signature, regulon, nullmodel, resp, res1$es$p.value, minsize, adaptive.size, cores=cores, processAll=processAll, verbose=verbose)
 		if(length(res1)==0) break
 		res <- c(res, list(res1$es))
 		regul <- c(regul, res1$regul)
@@ -338,7 +339,7 @@ msviperSynergy <- function(mobj, per=1000, seed=1, cores=1, verbose=TRUE) {
 }
 
 
-comregulationAnalysis <- function(tfs, ges, regulon, nullmodel=NULL, ones, resp, minsize=5, adaptive.size=FALSE, cores=1, verbose=TRUE) {
+comregulationAnalysis <- function(tfs, ges, regulon, nullmodel=NULL, ones, resp, minsize=5, adaptive.size=FALSE, cores=1, processAll=FALSE, verbose=TRUE) {
     if (cores>1) {
         reg1 <- mclapply(1:ncol(tfs), function(i, tfs, regulon, res1) {
             x <- tfs[, i]
@@ -379,6 +380,7 @@ comregulationAnalysis <- function(tfs, ges, regulon, nullmodel=NULL, ones, resp,
         if (length(test)>0) return(all(test > res1[paste(x, collapse="--")]))
         return(FALSE)
     }, res1=res1$p.value, res=resp)
+    if (processAll) filtro <- rep(TRUE, length(filtro)) # Force all TRUE to process all pairs regardeless of enrichment
     tmp <- lapply(res1, function(x, filtro) {
         ifelse(is.null(ncol(x)), return(x[filtro]), return(filterRowMatrix(x, filtro)))
     }, filtro=filtro)
