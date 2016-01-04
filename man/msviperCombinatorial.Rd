@@ -36,9 +36,9 @@ This function performs combinatorial analysis for msviper objects
 \examples{
 data(bcellViper, package="bcellViper")
 sig <- rowTtest(dset, "description", c("CB", "CC"), "N")$statistic
-dnull <- ttestNull(dset, "description", c("CB", "CC"), "N")
+dnull <- ttestNull(dset, "description", c("CB", "CC"), "N", per=100) # Only 100 permutations to reduce computation time, but it is recommended to perform at least 1000 permutations
 mra <- msviper(sig, regulon, dnull)
-mra <- msviperCombinatorial(mra, 50)
+mra <- msviperCombinatorial(mra, 20)
 plot(mra, cex=.7)
 }
 \seealso{

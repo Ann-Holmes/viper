@@ -22,7 +22,7 @@
 #' @examples
 #' data(bcellViper, package="bcellViper")
 #' sig <- rowTtest(dset, "description", c("CB", "CC"), "N")$statistic
-#' dnull <- ttestNull(dset, "description", c("CB", "CC"), "N", per=1000)
+#' dnull <- ttestNull(dset, "description", c("CB", "CC"), "N", per=100) # Only 100 permutations to reduce computation time, but it is recommended to perform at least 1000 permutations
 #' mra <- msviper(sig, regulon, dnull)
 #' plot(mra, cex=.7)
 

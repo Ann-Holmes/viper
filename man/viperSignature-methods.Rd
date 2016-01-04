@@ -45,16 +45,17 @@ This function generates a viperSignature object from a test dataset based on a s
 }
 \examples{
 data(bcellViper, package="bcellViper")
-ss <- viperSignature(dset, "description", c("N", "CB", "CC"))
+ss <- viperSignature(dset, "description", c("N", "CB", "CC"), per=100) # Only 100 permutations to reduce computation time, but it is recommended to perform at least 1000 permutations
 res <- viper(ss, regulon)
 dim(exprs(dset))
 exprs(dset)[1:5, 1:5]
 regulon
 dim(res)
-res[1:5, 1:5]
+exprs(res)[1:5, 1:5]
 data(bcellViper, package="bcellViper")
 d1 <- exprs(dset)
-ss <- viperSignature(d1[, -(1:5)], d1[, 1:5])
+pos <- pData(dset)[["description"]] \%in\% c("N", "CB", "CC")
+ss <- viperSignature(d1[, !pos], d1[, pos], per=100) # Only 100 permutations to reduce computation time, but it is recommended to perform at least 1000 permutations
 res <- viper(ss, regulon)
 dim(d1)
 d1[1:5, 1:5]

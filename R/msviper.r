@@ -25,7 +25,7 @@
 #' @examples
 #' data(bcellViper, package="bcellViper")
 #' sig <- rowTtest(dset, "description", c("CB", "CC"), "N")$statistic
-#' dnull <- ttestNull(dset, "description", c("CB", "CC"), "N", per=1000)
+#' dnull <- ttestNull(dset, "description", c("CB", "CC"), "N", per=100) # Only 100 permutations to reduce computation time, but it is recommended to perform at least 1000 permutations
 #' mra <- msviper(sig, regulon, dnull)
 #' plot(mra, cex=.7)
 #' @export
@@ -155,9 +155,9 @@ bootstrapmsviper <- function(mobj, method=c("mean", "median", "mode")) {
 #' @examples
 #' data(bcellViper, package="bcellViper")
 #' sig <- rowTtest(dset, "description", c("CB", "CC"), "N")$statistic
-#' dnull <- ttestNull(dset, "description", c("CB", "CC"), "N")
+#' dnull <- ttestNull(dset, "description", c("CB", "CC"), "N", per=100) # Only 100 permutations to reduce computation time, but it is recommended to perform at least 1000 permutations
 #' mra <- msviper(sig, regulon, dnull)
-#' mra <- msviperCombinatorial(mra, 50)
+#' mra <- msviperCombinatorial(mra, 20)
 #' plot(mra, cex=.7)
 #' @export
 msviperCombinatorial <- function(mobj, regulators=100, nullmodel=NULL, minsize=NULL, adaptive.size=NULL, level=10, cores=1, processAll=FALSE, verbose=TRUE) {
@@ -217,9 +217,9 @@ msviperCombinatorial <- function(mobj, regulators=100, nullmodel=NULL, minsize=N
 #' @examples
 #' data(bcellViper, package="bcellViper")
 #' sig <- rowTtest(dset, "description", c("CB", "CC"), "N")$statistic
-#' dnull <- ttestNull(dset, "description", c("CB", "CC"), "N")
+#' dnull <- ttestNull(dset, "description", c("CB", "CC"), "N", per=100) # Only 100 permutations to reduce computation time, but it is recommended to perform at least 1000 permutations
 #' mra <- msviper(sig, regulon, dnull)
-#' mra <- msviperCombinatorial(mra, 50)
+#' mra <- msviperCombinatorial(mra, 20)
 #' mra <- msviperSynergy(mra)
 #' summary(mra)
 #' @export

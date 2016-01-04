@@ -29,7 +29,7 @@ This function performs a viper analysis with bootstraps
 \examples{
 data(bcellViper, package="bcellViper")
 d1 <- exprs(dset)
-res <- viper(d1, regulon, bootstraps=10)
+res <- viper(d1[, 1:50], regulon, bootstraps=10) # Run only on 50 samples to reduce computation time
 dim(d1)
 d1[1:5, 1:5]
 regulon

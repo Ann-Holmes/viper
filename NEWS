@@ -1,3 +1,7 @@
+new for version 1.5.5
+=====================
+Example code was modified to reduce computation time
+
 new for version 1.5.4
 =====================
 Added the argument processAll to msviperCombinatorial that allow the evaluation of synergy between pairs showing enrichment not significantly higher than the singe regulons
