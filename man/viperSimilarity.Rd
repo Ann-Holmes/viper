@@ -4,8 +4,8 @@
 \alias{viperSimilarity}
 \title{VIPER similarity}
 \usage{
-viperSimilarity(x, nn = NULL, ws = 2, method = c("two.sided", "greater",
-  "less"))
+viperSimilarity(x, nn = NULL, ws = c(4, 1), method = c("two.sided",
+  "greater", "less"))
 }
 \arguments{
 \item{x}{Numeric matrix containing the VIPER results with samples in columns and regulators in rows}
@@ -20,6 +20,16 @@ viperSimilarity(x, nn = NULL, ws = 2, method = c("two.sided", "greater",
 signatureDistance object
 }
 \description{
+If ws is a single number, weighting is performed using an exponential function. If ws is a 2 numbers vector, weighting is performed with a symmetric sigmoid function using the first element as inflection point and the second as trend.
+}
+\details{
 This function computes the similarity between VIPER signatures
+}
+\examples{
+data(bcellViper, package="bcellViper")
+dd <- viperSimilarity(exprs(dset))
+dd[1:5, 1:5]
+scale(dd)[1:5, 1:5]
+as.matrix(as.dist(dd))[1:5, 1:5]
 }
 
