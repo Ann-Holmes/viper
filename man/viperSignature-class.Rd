@@ -11,7 +11,7 @@ This class contains the results produced by the \code{viperSignature} function
 
  \describe{
    \item{\code{signature}:}{Matrix of class \code{numeric} with genes in rows and samples in columns containing the gene expression signatures}
-   \item{\code{nullmodel}:}{Matrix of class \code{"numeric"} with genes in rows and permutations in columns ontaining the sample-permutation based signatures to be used as NULL model}
+   \item{\code{nullmodel}:}{Matrix of class \code{numeric} with genes in rows and permutations in columns ontaining the sample-permutation based signatures to be used as NULL model}
  }
 }
 

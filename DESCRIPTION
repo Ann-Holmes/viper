@@ -1,8 +1,7 @@
 Package: viper
 Version: 1.5.5
 Date: 2013-04-09
-Title: Virtual Inference of Protein-activity by Enriched Regulon
-    analysis
+Title: Virtual Inference of Protein-activity by Enriched Regulon analysis
 Author: Mariano J Alvarez <reef103@gmail.com>
 Maintainer: Mariano J Alvarez <reef103@gmail.com>
 Depends:

@@ -520,3 +520,13 @@ aecdf1 <- function(dnull, symmetric=FALSE, x, alternative=c("two.sided", "greate
     names(nes) <- names(p) <- names(x)
     return(list(nes=nes, p.value=p))
 }
+
+#' Sigmoid transformation
+#' 
+#' This function transforms a numeric vector using a sigmoid function
+#' 
+#' @param x Numeric vector
+#' @param slope Number indicating the slope at the inflection point
+#' @param inflection Number indicating the inflection point
+#' @return Numeric vector
+sigT <- function (x, slope = 20, inflection = 0.5) 1 - 1/(1 + exp(slope * (x - inflection)))
