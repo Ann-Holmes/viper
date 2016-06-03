@@ -81,7 +81,7 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
 		none={tt <- eset}
 	)
     if (verbose) message("Computing regulons enrichment with aREA")
-    es <- aREA(tt, regulon, cores=cores, verbose=verbose)
+    es <- aREA(tt, regulon, cores=cores, minsize=0, verbose=verbose)
     if (!nes) {
         if (pleiotropy) warning("No pleiotropy correction implemented when raw es is returned.", call.=FALSE)
         return(es$es)
@@ -89,7 +89,7 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
     if (is.null(dnull)) nes <- es$nes
     else {
         if (verbose) message("\nEstimating NES with null model")
-        tmp <- aREA(dnull, regulon, cores=cores, verbose=verbose)$es
+        tmp <- aREA(dnull, regulon, cores=cores, minsize=0, verbose=verbose)$es
         nes <- t(sapply(1:nrow(tmp), function(i, tmp, es) {
             aecdf1(tmp[i, ], symmetric=TRUE, es[i, ])$nes
         }, tmp=tmp, es=es$es))
@@ -106,9 +106,9 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
                 nes <- nes[, i]
                 sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
                 if (!is.null(sreg)) {
-                    if (is.null(dnull)) tmp <-aREA(ss[, i], sreg, cores=1)$nes[, 1]
+                    if (is.null(dnull)) tmp <-aREA(ss[, i], sreg, minsize=5, cores=1)$nes[, 1]
                     else {
-                        tmp <- aREA(cbind(ss[, i], dnull), sreg, cores=1)$es
+                        tmp <- aREA(cbind(ss[, i], dnull), sreg, minsize=5, cores=1)$es
                         tmp <- apply(tmp, 1, function(x) aecdf1(x[-1], symmetric=TRUE, x[1])$nes)
                     }
                     nes[match(names(tmp), names(nes))] <- tmp
@@ -123,9 +123,9 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
                 nes <- nes[, i]
                 sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
                 if (!is.null(sreg)) {
-                    if (is.null(dnull)) tmp <-aREA(ss[, i], sreg)$nes[, 1]
+                    if (is.null(dnull)) tmp <-aREA(ss[, i], sreg, minsize=5)$nes[, 1]
                     else {
-                        tmp <- aREA(cbind(ss[, i], dnull), sreg)$es
+                        tmp <- aREA(cbind(ss[, i], dnull), sreg, minsize=5)$es
                         tmp <- apply(tmp, 1, function(x) aecdf1(x[-1], symmetric=TRUE, x[1])$nes)
                     }
                     nes[match(names(tmp), names(nes))] <- tmp

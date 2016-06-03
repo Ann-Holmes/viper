@@ -208,7 +208,7 @@ scale.signatureDistance <- function(x, center=TRUE, scale=TRUE) {
 #' 
 #' @param x Numeric matrix containing the VIPER results with samples in columns and regulators in rows
 #' @param nn Optional number of top regulators to consider for computing the similarity
-#' @param ws Number indicating the weighting exponent for the signature, only used if \code{nn} is ommited
+#' @param ws Number indicating the weighting exponent for the signature, or vector of 2 numbers indicating the inflection point and the value corresponding to a weighting score of .1 for a sigmoid transformation, only used if \code{nn} is ommited
 #' @param method Character string indicating whether the most active (greater), less active (less) or both tails (two.sided) of the signature should be used for computing the similarity
 #' @description If ws is a single number, weighting is performed using an exponential function. If ws is a 2 numbers vector, weighting is performed with a symmetric sigmoid function using the first element as inflection point and the second as trend.
 #' @return signatureDistance object
@@ -220,7 +220,7 @@ scale.signatureDistance <- function(x, center=TRUE, scale=TRUE) {
 #' as.matrix(as.dist(dd))[1:5, 1:5]
 #' @export
 
-viperSimilarity <- function(x, nn=NULL, ws=c(4, 1), method=c("two.sided", "greater", "less")) {
+viperSimilarity <- function(x, nn=NULL, ws=c(4, 2), method=c("two.sided", "greater", "less")) {
     method <- match.arg(method)
     x[is.na(x)] <- 0
     xw <- x
@@ -241,6 +241,7 @@ viperSimilarity <- function(x, nn=NULL, ws=c(4, 1), method=c("two.sided", "great
             xw <- sign(xw)*abs(xw)^ws
         }
         else {
+            ws[2] <- 1/(ws[2]-ws[1])*log(1/.9-1)
             switch(method,
                    greater={
                        xw[xw<0] <- 0

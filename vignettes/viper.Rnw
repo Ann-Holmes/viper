@@ -1,10 +1,15 @@
 \documentclass{article}
 \usepackage{fullpage}
 \usepackage{hyperref}
+\usepackage{authblk}
 %\VignetteIndexEntry{Using VIPER}
 
 \title{Using viper, a package for Virtual Inference of Protein-activity by Enriched Regulon analysis}
-\author{Mariano J. Alvarez, Federico Giorgi, Andrea Califano\\Department of Systems Biology, Columbia University, New York, USA}
+\author[1,2]{Mariano J. Alvarez}
+\author[1]{Federico M. Giorgi}
+\author[1]{Andrea Califano}
+\affil[1]{Department of Systems Biology, Columbia University, 1130 St. Nicholas Ave., New York}
+\affil[2]{DarwinHealth Inc, 3960 Broadway, New York}
 \date{\today}
 
 \begin{document}
@@ -29,7 +34,7 @@ While VIPER exploits the same principle as MARINA, it implements a dedicated alg
 In addition, while especially straightforward for TFs, VIPER effectively extends to signal transduction proteins.
 For this, we extended the concept of regulon to include the transcriptional targets that are most directly affected by the protein's activity, based on maximization of information transfer over all alternative paths\cite{Alvarez2013}.
 
-VIPER is provided in this package in two flavors: a multiple sample version (msVIPER) designed for gene expression signatures based in multiple samples or expression profiles, and the single sample version (VIPER), which ranks relative protein activity on a sample-by-sample basis, thus allowing transformation of a typical gene expression matrix (i.e. multiple mRNA profiled across multiple samples) into a protein activity matrix, representing the relative activity of each protein in each sample.
+VIPER is provided in this package in two flavors: a multiple sample version (msVIPER) designed for gene expression signatures based in multiple samples or expression profiles, and the single sample version (VIPER), which estimates relative protein activity on a sample-by-sample basis, thus allowing transformation of a typical gene expression matrix (i.e. multiple mRNA profiled across multiple samples) into a protein activity matrix, representing the relative activity of each protein in each sample.
 
 The \emph{viper} package implements VIPER and msVIPER algorithms in R.
 The \emph{bcellViper} data package provides some example datasets and a small B-cell context-specific transcriptional regulatory network, representing 172,240 inferred regulatory interactions between 621 TFs and 6,249 target genes.
@@ -53,12 +58,12 @@ Human breast carcinoma signalome network & \url{http://dx.doi.org/10.6084/m9.fig
 \end{table}
 
 %--------
-%\section{Citation}
-%Alvarez, M. J., Shen, Y, Ding, B. B., Ye, B. H. \& Califano, A. Inferring global protein activity profiles
-%by network based analysis of gene expression signatures. (Manuscript submitted for publication).
+\section{Citation}
+Alvarez MJ, Shen Y, Giorgi FM, Lachmann A, Ding BB, Ye BH \& Califano, A. Functional characterization of somatic mutations in cancer using network-based inference of protein activity. Nature Genetics (In press) (2016).
 %--------
 \section{Installation of \emph{viper} package}
-In order to install the \emph{viper} package, the user needs to first install R (\url{http://www.r-project.org}) and the \emph{mixtools} package from Bioconductor (\url{http://www.bioconductor.org}). After that \emph{viper}, and the required data package to run this vignette and the function examples (\emph{bcellViper}) can be installed with:
+Viper requires the R-system (\url{http://www.r-project.org}), the \emph{mixtools} package (\url{http://www.bioconductor.org}), and the (\emph{bcellViper}) package to run the examples.
+After installing R, all required components can be obtained with:
 
 <<echo=TRUE, eval=FALSE, results=hide>>=
 source("http://bioconductor.org/biocLite.R")
@@ -97,18 +102,18 @@ print(regul)
 
 %-------
 \section{Master Regulator Analysis performed by msVIPER}
-To illustrate this section, we are going to analyze part of the expression data from \cite{Basso2005}, consitent on 5 naive human B-cell, 5 memory B-cell, 5 centroblast and 5 centrocytes B-cell samples profiled on Affymetrix H-GU95Av2 gene arrays.
+To illustrate this section, we analyze part of the expression data from \cite{Basso2005}, consitent on 5 na\"{i}ve human B-cell, 5 memory B-cell, 5 centroblast and 5 centrocyte B-cell samples profiled on Affymetrix H-GU95Av2 gene arrays.
 The complete dataset is available from Gene Expression Omnibus (GSE2350), and here for convenience, we have included the `cleaner'\cite{Alvarez2009} processed and MAS5\cite{Gautier2004} normalized samples in the \emph{bcellViper} package.
 
 \subsection{Generating the gene expression signatures}
 Lets assume that we are interested in identifying transcriptional regulators associated with the Germinal Center (GC) reaction.
 GC are the peripheral lymphoid organs where antigen-driven somatic hypermutation of the genes encoding the immunoglobulin variable region occurs, and are the main source of memory B cells and plasma cells that produce high-affinity antibodies.
-Centroblasts and centrocytes are the main B-cell phenotypes present in the GCs, they are derived from antigen-stimulated peripheral blood B-cells, and represent the most proliferative cellular physiologic phenotypes of the adult human body.
-Thus, we can obtain a gene expression signature for the GC formation by comparing GC (centroblasts and centrocytes) against naive B-cells.
-The `ExpressionSet' object available from the bcellViper data package contains 5 centroblasts samples (CB), 5 centrocyte samples (CC) and 5 na\"{i}ve peripheral blood B-cell samples (N).
+Centroblast and centrocyte are the main B-cell phenotypes present in the GCs, they are derived from antigen-stimulated peripheral blood B-cells, and represent the most proliferative cellular physiologic phenotypes of the adult human body.
+Thus, we can obtain a gene expression signature for the GC formation by comparing GC (centroblasts and centrocytes) against na\"{i}ve B-cells.
+The `ExpressionSet' object available from the \emph{bcellViper} data package contains 5 centroblast samples (CB), 5 centrocyte samples (CC) and 5 na\"{i}ve peripheral blood B-cell samples (N).
 
 The \emph{viper} package includes the function \emph{rowTtest} that efficiently performs Student's t-test for each row of a dataset.
-The \emph{rowTtest} function conveniently takes an `ExpressionSet' object as argument and produces a list object containing the Student's t-statistic (\texttt{statistic}) and the test's p-value (\texttt{p.value}), that by default is estimated by a 2-tailed test.
+The \emph{rowTtest} function conveniently takes an `ExpressionSet' object as argument and produces a list object containing the Student's t-statistic (\texttt{statistic}) and the test's p-value (\texttt{p.value}), that by default is estimated by a 2-tail test.
 <<echo=TRUE, results=hide>>=
 signature <- rowTtest(dset, "description", c("CB", "CC"), "N")
 @
@@ -162,7 +167,7 @@ plot(mrs, cex = .7)
   \begin{center}
     \includegraphics[width=.7\textwidth]{viper-msviper}
   \end{center}
-  \caption{\label{fig:msviper}VIPER plot showing the projection of the negative (repressed, shown in blue color) and positive (activated, shown in red color) targets for each TF, as inferred by ARACNe and correlaton analysis when reverse engineering the regulatory network (vertical lines resembling a bar-code), on the GES (\emph{x-axis}), where the genes in the GES were rank-sorted from the one most down-regulated to the one most upregulated in the `test' vs `reference' conditions.
+  \caption{\label{fig:msviper}VIPER plot showing the projection of the negative (repressed, shown in blue color) and positive (activated, shown in red color) targets for each TF, as inferred by ARACNe and correlation analysis when reverse engineering the regulatory network (vertical lines resembling a bar-code), on the GES (\emph{x-axis}), where the genes in the GES were rank-sorted from the one most down-regulated to the one most upregulated in the `test' vs `reference' conditions.
 The optional two-columns heatmap displayed on the right side of the figure shows the inferred differential activity (first column) and differential expression (second column), with the rank of the displayed genes in the GES (shown all the way to the right).}
 \end{figure}
 
@@ -179,7 +184,7 @@ summary(mrs)
 \section{Beyond msVIPER}
 
 \subsection{Bootstrap msVIPER}
-The effect of outlier samples on the gene expression signature can be reduced by the use of resampling techniques\cite{Alvarez2013}.
+The effect of outlier samples on the gene expression signature can be reduced by the use of resampling techniques.
 msVIPER is capable of performing the analysis with bootstrap if a matrix of bootstraped signatures, instead of a vector, is given as \emph{signature} argument.
 We implemened the function \emph{bootstrapTtest} in the \emph{viper} package to generate this kind of bootstraped GES matrixes from the `test' and `reference' datasets.
 The function produces 100 bootstrap interactions by default.
@@ -216,7 +221,7 @@ mrshadow <- shadow(mrs, regulators = 25, verbose = FALSE)
 @
 
 As output, the \emph{shadow} function produces an updated `msviper' object.
-The summary of it, generated by the \emph{summary} function, will lists now not only the top MRs, but also the shadow pairs, in the form: $MR_1 -> MR_2$, indicating that part of the inferred $MR_2$ ativity is due to co-regulation of $MR_2$ target genes by $MR_1$. 
+The summary of it, generated by the \emph{summary} function, lists now not only the top MRs, but also the shadow pairs, in the form: $MR_1 -> MR_2$, indicating that part of the inferred $MR_2$ ativity is due to co-regulation of $MR_2$ target genes by $MR_1$. 
 <<echo=TRUE, results=verbatim>>=
 summary(mrshadow)
 @
@@ -224,9 +229,9 @@ summary(mrshadow)
 \subsection{Synergy analysis}
 To predict synergistic interactions between regulators we first compute the enrichment of co-regulons, defined as the intersection between regulons.
 We expect that a combination of regulators will synergistically regulate a gene expression signature if their co-regulon show a significantly higher enrichment on the signature than the union of the corresponding regulons\cite{Carro2010b}.
-Co-regulon analysis was implemented in the \emph{viper} package by the \emph{msviperCombinatorial} function.
+Co-regulon analysis is implemented in the \emph{viper} package by the \emph{msviperCombinatorial} function.
 It takes a `msviper' object as argument and computes the enrichment of all co-regulons, generated from a selected number of MRs (indicated by the \emph{regulators} parameter), on the GES.
-As an usage example, we are going to compute the enrichment of the co-regulons for the top 25 regulators,
+As an example, we compute the enrichment of the co-regulons for the top 25 regulators,
 <<echo=TRUE, results=hide>>=
 mrs <- msviperCombinatorial(mrs, regulators = 25, verbose = FALSE)
 @
@@ -236,7 +241,7 @@ The comparison between the enrichment of the co-regulon versus the union of the 
 mrs <- msviperSynergy(mrs, verbose = FALSE)
 @
 
-The output of \emph{msviperSynergy} is still a class `msviper' object and hence the \emph{plot} (Fig. \ref{fig:symsviper}) and \emph{summary} methods can be applied to it.
+The output of \emph{msviperSynergy} is un updated object of class `msviper' with \emph{plot} (Fig. \ref{fig:symsviper}) and \emph{summary} methods.
 The output of \emph{summary} will include in this case the enrichment results for the co-regulons and the p-value for the predicted synergistic effect.
 <<label=synmsviper, include=FALSE, echo=TRUE, results=verbatim, fig=TRUE>>=
 summary(mrs)
@@ -252,19 +257,19 @@ plot(mrs, 25, cex = .7)
 %--------
 \section{Virtual Inference of Protein-activity by Enriched Regulon analysis (VIPER)}\label{sec:viper}
 VIPER is the extension of msVIPER to single sample-based analysis.
-It effectively transforms a gene expression matrix to a regulators' activity matrix.
-The simplest implementation of VIPER is based on single-sample gene expression signatures obtained by scaling the probes or genes (subtracting the mean and dividing by the standard devition of each row).
-A gene expression matrix or `ExpressionSet' object and appropriate regulatory network are the minimum set of parameters required to perform a VIPER analysis with the function \emph{viper}.
+It effectively transforms a gene expression matrix to a regulatory protein activity matrix.
+The simplest implementation of VIPER is based on single-sample gene expression signatures obtained by scaling the probes or genes -- subtracting the mean and dividing by the standard devition of each row.
+A gene expression matrix or `ExpressionSet' object and appropriate regulatory network are the minimum set of parameters required to perform a VIPER analysis with the \emph{viper} function.
 <<echo=TRUE, results=hide>>=
 vpres <- viper(dset, regulon, verbose = FALSE)
 @
 
-The \emph{viper} function generates a matrix (or `ExpressionSet' object in case an `Expressionset' object is given as input) of regulator's activity, containing \Sexpr{nrow(vpres)} regulators x \Sexpr{ncol(vpres)} samples in our example.
+The \emph{viper} function generates a matrix -- or `ExpressionSet' object in case an `ExpressionSet' object is given as input -- of regulator's activity, containing \Sexpr{nrow(vpres)} regulators x \Sexpr{ncol(vpres)} samples in our example.
 <<echo=TRUE, results=verbatim>>=
 dim(vpres)
 @
 
-The differential activity of regulators between groups of samples, for example between germinal center B-cell and Naive B-cells, can be obtained by any hypothesis testing statistical method, like for example the Student's t-test:
+The differential activity of regulatory proteins between groups of samples, for example between germinal center B-cell and Na\"{i}ve B-cells, can be obtained by any hypothesis testing statistical method, like for example the Student's t-test:
 <<echo=T, results=verbatim>>=
 tmp <- rowTtest(vpres, "description", c("CB", "CC"), "N")
 data.frame(Gene = rownames(tmp$p.value), t = round(tmp$statistic, 2),
@@ -272,18 +277,19 @@ data.frame(Gene = rownames(tmp$p.value), t = round(tmp$statistic, 2),
 @
 
 \subsection{Running VIPER with a null model}
-VIPER computes the normalized enrichment score (NES) analytically based on the assumption that in the null situation, the target genes are uniformly distributed on the gene expression signature.
+VIPER computes the normalized enrichment score (NES) analytically, based on the assumption that in the null situation, the target genes are uniformly distributed on the gene expression signature.
 Because the extensive co-regulation of gene expression taking place in the cell, this assumption never holds true, and this is the reason why a null model based on sample permutations is used in msVIPER to estimate NES.
 The same approach can also be used for VIPER, given that a set of samples is used as reference for the analysis.
 We can generate a set of GESs based on a set of reference samples, and the corresponding null model based on sample permutations, with the function \emph{viperSignature}.
-It takes two matrixes as arguments, the first one containing the expression data for all the `test' samples, and the second corresponding to the `reference' samples. In the case an `ExpressionSet' object is used as input, we will have to indenbtify the `reference' samples and the function will  consider all the remaining samples as `test' ones.
+It takes two matrixes as arguments, the first one containing the expression data for all the `test' samples, and the second corresponding to the `reference' samples.
+If an `ExpressionSet' object is used as input, the `reference' samples should be indicated and the function will consider all the remaining samples as `test' ones.
 The number of permutations for the null model can be defined by the \emph{per} argument, whose default value is 1,000.
 <<echo=T, results=hide>>=
 vpsig <- viperSignature(dset, "description", "N", verbose = FALSE)
 vpres <- viper(vpsig, regulon, verbose = FALSE)
 @
 
-Because after VIPER analysis, the activity of different regulators is expressed in the same scale (normalized enrichment score), euclidean distance is an appropriate meassure of similarity between samples and we can, for example, perform an unsupervised hierarchical cluster analysis of the samples in a similar way we would do it in the case of gene expression data (Fig. \ref{fig:euviper}):
+Because VIPER expresses activity for all the regulatory proteins in the same scale -- normalized enrichment score --, euclidean distance is an appropriate measure of similarity between samples and we can, for example, perform an unsupervised hierarchical cluster analysis of the samples in a similar way we would do it in the case of gene expression data (Fig. \ref{fig:euviper}):
 
 <<label=euviper, include=FALSE, echo=TRUE, results=hide, fig=TRUE>>=
 pos <- pData(vpres)[["description"]] %in% c("M", "CB", "CC")
@@ -297,15 +303,15 @@ heatmap(as.matrix(dd), Rowv = as.dendrogram(hclust(dd, method = "average")), sym
   \begin{center}
     \includegraphics[width=.6\textwidth]{viper-euviper}
   \end{center}
-  \caption{\label{fig:euviper}Heatmap showing the similarity between the samples (red indicated highly-similar samples) as meassured by euclidean distance between the VIPER-inferred transcriptional regulator's activity profiles. The samples (M: memmory B-cells, CB: centroblasts, CC: centrocytes) were arranged according to average-linkage hierarchical cluster analysis.}
+  \caption{\label{fig:euviper}Heatmap showing the similarity between the samples (red indicated highly-similar samples) as measured by euclidean distance between the VIPER-inferred transcriptional regulator's activity profiles. The samples (M: memory B-cells, CB: centroblasts, CC: centrocytes) were arranged according to average-linkage hierarchical cluster analysis.}
 \end{figure}
 
 We have developed, and included in the \emph{viper} package, a function to compute the similarity between the columns of a gene expression or VIPER-predicted activity matrix.
-It follows the same concept as the two-tail Gene Set Enrichment Analysis (GSEA)\cite{Julio2011}, but it is based on the wREA-2 algorithm\cite{Alvarez2013}.
-The \emph{signatureDistance} function takes an expression or activity matrix as input, and generates a matrix of similarity scores between sample pairs, in the form of a `similarityDistance' class object.
-In our example, because we want to compute the similarity between samples based on their regulators' relative activity vectors, we set the \emph{scale.} argument to FALSE.
+It follows the same concept as the two-tail Gene Set Enrichment Analysis (GSEA)\cite{Julio2011}, but it is based on the aREA algorithm\cite{Alvarez2013}.
+The \emph{viperSimilarity} function takes an expression or activity matrix as input, and generates a matrix of similarity scores between sample pairs, in the form of a `similarityDistance' class object.
+
 <<echo=TRUE, results=hide>>=
-dd <- signatureDistance(d1, scale. = F)
+dd <- viperSimilarity(d1)
 @
 
 We can use the generic function \emph{scale} to `scale' the similary matrix in the rage [-1; 1], and the resulting matrix will be analogous to a correlation matrix.
@@ -321,7 +327,7 @@ method = "average")), symm = T)
   \begin{center}
     \includegraphics[width=.6\textwidth]{viper-sigviper}
   \end{center}
-  \caption{\label{fig:sigviper}Heatmap showing the similarity between the samples (red indicated highly-similar samples) as meassured by `signature distance' between the VIPER-inferred transcriptional regulator's activity profiles. The samples (M: memmory B-cells, CB: centroblasts, CC: centrocytes) were arranged according to average-linkage hierarchical cluster analysis.}
+  \caption{\label{fig:sigviper}Heatmap showing the similarity between the samples (red indicated highly-similar samples) as measured by \emph{viperSimilarity} between the VIPER-inferred regulatory protein activity profiles. The samples (M: memory B-cells, CB: centroblasts, CC: centrocytes) were arranged according to average-linkage hierarchical cluster analysis.}
 \end{figure}
 %-----------
 \begin{thebibliography}{99}
@@ -336,7 +342,7 @@ method = "average")), symm = T)
 \bibitem{Tothill2008} Tothill, R. W. et al. Novel molecular subtypes of serous and endometrioid ovarian cancer linked to clinical outcome. Clin. Cancer Res. 14, 5198-208 (2008).
 \bibitem{Bozovic2012} Bozovic, A. \& Kulasingam, V. Quantitative mass spectrometry-based assay development and validation: From small molecules to proteins. Clin. Biochem. 46, 444-455 (2012).
 \bibitem{Wolf-Yadlin2009} Wolf-Yadlin, A., Sevecka, M. \& MacBeath, G. Dissecting protein function and signaling using protein microarrays. Curr. Opin. Chem. Biol. 13, 398-405 (2009).
-\bibitem{Alvarez2013} Alvarez, M. J. et al. Inferring global protein activity profiles by network based analysis of gene expression signatures. Manuscript in preparation.
+\bibitem{Alvarez2013} Alvarez MJ, Shen Y, Giorgi FM, Lachmann A, Ding BB, Ye BH \& Califano, A. Functional characterization of somatic mutations in cancer using network-based inference of protein activity. Nature Genetics (In press) (2016).
 \bibitem{Margolin2006} Margolin, A. A. et al. ARACNE: an algorithm for the reconstruction of gene regulatory networks in a mammalian cellular context. BMC Bioinformatics 7 Suppl 1, S7 (2006).
 \bibitem{Subramanian2005} Subramanian, A. et al. Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles. Proc. Natl. Acad. Sci. USA 102, 15545-50 (2005).
 

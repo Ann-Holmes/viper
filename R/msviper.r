@@ -50,11 +50,11 @@ msviper <- function(ges, regulon, nullmodel=NULL, pleiotropy=FALSE, minsize=25, 
 	}
 	else regulon <- regulon[sapply(regulon, function(x) length(x$tfmode))>=minsize]
     if (verbose) message("Computing regulon enrichment with aREA algorithm")
-    res <- aREA(ges, regulon, method="loop", cores=cores, verbose=verbose)
+    res <- aREA(ges, regulon, method="loop", cores=cores, minsize=0, verbose=verbose)
     if (is.null(nullmodel)) nes <- res$nes
     else {
         if (verbose) message("\nEstimating the normalized enrichment scores")
-        tmp <- aREA(nullmodel, regulon, cores=cores, verbose=verbose)$es
+        tmp <- aREA(nullmodel, regulon, cores=cores, minsize=0, verbose=verbose)$es
         nes <- t(sapply(1:nrow(tmp), function(i, tmp, es) {
             aecdf(tmp[i, ], symmetric=TRUE)(es[i, ])$nes
         }, tmp=tmp, es=res$es))
@@ -72,9 +72,9 @@ msviper <- function(ges, regulon, nullmodel=NULL, pleiotropy=FALSE, minsize=25, 
                 nes <- nes[, i]
                 sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
                 if (!is.null(sreg)) {
-                    if (is.null(dnull)) tmp <- aREA(ss[, i], sreg, cores=1)$nes[, 1]
+                    if (is.null(dnull)) tmp <- aREA(ss[, i], sreg, minsize=5, cores=1)$nes[, 1]
                     else {
-                        tmp <- aREA(cbind(ss[, i], dnull), sreg, cores=1)$es
+                        tmp <- aREA(cbind(ss[, i], dnull), sreg, minsize=5, cores=1)$es
                         tmp <- apply(tmp, 1, function(x) aecdf(x[-1], symmetric=TRUE)(x[1])$nes)
                     }
                     nes[match(names(tmp), names(nes))] <- tmp
@@ -89,9 +89,9 @@ msviper <- function(ges, regulon, nullmodel=NULL, pleiotropy=FALSE, minsize=25, 
                 nes <- nes[, i]
                 sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
                 if (!is.null(sreg)) {
-                    if (is.null(dnull)) tmp <-aREA(ss[, i], sreg)$nes[, 1]
+                    if (is.null(dnull)) tmp <-aREA(ss[, i], sreg, minsize=5)$nes[, 1]
                     else {
-                        tmp <- aREA(cbind(ss[, i], dnull), sreg)$es
+                        tmp <- aREA(cbind(ss[, i], dnull, minsize=5), sreg)$es
                         tmp <- apply(tmp, 1, function(x) aecdf(x[-1], symmetric=TRUE)(x[1])$nes)
                     }
                     nes[match(names(tmp), names(nes))] <- tmp
