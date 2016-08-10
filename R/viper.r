@@ -53,7 +53,7 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
     if (is.null(nrow(eset))) eset <- matrix(eset, length(eset), 1, dimnames=list(names(eset), NULL))
     if (eset.filter) {
         tmp <- c(names(regulon), unlist(lapply(regulon, function(x) names(x$tfmode)), use.names=FALSE))
-        eset <- eset[rownames(eset) %in% unique(tmp), ]
+        eset <- eset[rownames(eset) %in% unique(tmp), , drop=FALSE]
     }
     if (verbose) message("\nComputing the association scores")
     regulon <- lapply(regulon, function(x, genes) {
