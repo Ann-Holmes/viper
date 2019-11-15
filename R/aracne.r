@@ -54,12 +54,12 @@ aracne2regulon <- function(afile, eset, gene = FALSE, format=c("adj", "3col"), v
     if (verbose) message("Generating the regulon objects...")
     tmp <- aracne[!is.na(aracne$mi), ]
     tmp <- tmp[rowSums(matrix(as.matrix(tmp[, 1:2]) %in% rownames(dset), nrow(tmp), 2))==2, ]
-    aracne <- tapply(1:nrow(tmp), tmp$tf, function(pos, tmp) {
+    aracne <- tapply(1:nrow(tmp), as.vector(tmp$tf), function(pos, tmp) {
         tfmode <- rep(0, length(pos))
         names(tfmode) <- tmp$target[pos]
         list(tfmode=tfmode, likelihood=tmp$mi[pos])
     }, tmp=tmp)
-    names(aracne) <- levels(tmp$tf)
+    names(aracne) <- levels(factor(as.vector(tmp$tf)))
     aracne <- TFmode1(aracne, dset)
     rm(dset)
 # removing missing data from the aracne regulon
