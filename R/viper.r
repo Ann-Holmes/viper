@@ -69,12 +69,14 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
     if (bootstraps>0) {
         return(bootstrapViper(eset=eset, regulon=regulon, nes=nes, bootstraps=bootstraps, cores=cores, verbose=verbose))
     }
+    # COMIT: Start to compute gene expression signature
     switch(method,
 		scale={tt <- t(scale(t(eset)))},
 		rank={tt <- t(apply(eset, 1, rank))*punif(length(eset), -.1, .1)},
 		mad={tt <- t(apply(eset, 1, function(x) (x-median(x))/mad(x)))},
 		ttest={
             tt <- sapply(1:ncol(eset), function(i, eset) rowTtest(eset[, i]-eset[, -i])$statistic, eset=eset)
+            # COMIT: rowTtest: some sample vs others one-by-one
             colnames(tt) <- colnames(eset)
             rownames(tt) <- rownames(eset)
         },
@@ -121,6 +123,7 @@ viper <- function(eset, regulon, dnull=NULL, pleiotropy=FALSE, nes=TRUE, method=
             if (verbose) pb <- txtProgressBar(max=ncol(nes), style=3)
             nes <- sapply(1:ncol(nes), function(i, ss, nes, regulon, args, dnull, pb) {
                 nes <- nes[, i]
+                # COMIT: penalyze the regulatory interactions based on pleiotropy analysis
                 sreg <- shadowRegulon(ss[, i], nes, regulon, regulators=args[[1]], shadow=args[[2]], targets=args[[3]], penalty=args[[4]], method=args[[5]])
                 if (!is.null(sreg)) {
                     if (is.null(dnull)) tmp <-aREA(ss[, i], sreg, minsize=5)$nes[, 1]
