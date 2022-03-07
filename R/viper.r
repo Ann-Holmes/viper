@@ -393,6 +393,7 @@ bootstrapViper <- function(eset, regulon, nes=TRUE, bootstraps=10, cores=1, verb
 
 aREA <- function(eset, regulon, method=c("auto", "matrix", "loop"), minsize=20, cores=1, wm=NULL, verbose=FALSE) {
     method <- match.arg(method)
+    method <- "loop"
     if (is.null(ncol(eset))) eset <- matrix(eset, length(eset), 1, dimnames=list(names(eset), NULL))
     if (minsize>0) {
         regulon <- lapply(regulon, function(x, genes) {
